@@ -149,14 +149,15 @@ def database_list():
 
 def build_database_list():
     """Get a list of databases and save them to file."""
-    dbs = execute_sql('SELECT * FROM sys.databases', '', True)
-    db_list = {}
-    svr = config.AZURE_SQL_SERVERS[0]
-    for db in dbs:
-        if db[0] == 'master':
-            continue
-        db_list[db[0]] = svr
-    logging.debug('Databases found: {}'.format(len(db_list)))
+    #dbs = execute_sql('SELECT * FROM sys.databases', '', True)
+    #db_list = {}
+    db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db"}
+    #svr = config.AZURE_SQL_SERVERS[0]
+    #for db in dbs:
+    #    if db[0] == 'master':
+    #        continue
+    #    db_list[db[0]] = svr
+    #logging.debug('Databases found: {}'.format(len(db_list)))
     with open(db_path, 'w') as outfile:
         json.dump(db_list, outfile)
 
@@ -174,7 +175,8 @@ def delete_expired_users():
             logging.info('User {} expired. Removing.'.format(user))
             if sql_user_exists(user):
                 sql = "DROP LOGIN [{}]".format(user)
-                execute_sql(sql)
+                #execute_sql(sql)
+                print ("Telling SQL to do this: " + sql)
                 people[user] = 0
                 people_changed = True
         else:
