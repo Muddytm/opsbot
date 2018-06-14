@@ -3,7 +3,7 @@ from enum import IntEnum
 import json
 import os
 
-import config
+import opsbot.config as config
 
 people_path = config.DATA_PATH + 'people.json'
 

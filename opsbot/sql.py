@@ -11,7 +11,7 @@ import pyodbc
 from datetime import datetime
 from datetime import timedelta
 
-import config
+import opsbot.config as config
 
 sql_log_base = config.LOG_PATH
 sql_logins = config.DATA_PATH + 'active_sql.json'

@@ -3,8 +3,8 @@ import logging
 import threading
 import time
 
-import config
-import sql
+import opsbot.config as config
+import opsbot.sql as sql
 
 
 class TaskThread(threading.Thread):

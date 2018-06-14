@@ -9,11 +9,11 @@ from six import iteritems
 from slackbot.bot import listen_to
 from slackbot.bot import respond_to
 
-import config
-from people import Level
-from people import People
-import sql
-from strings import Strings
+import opsbot.config as config
+from opsbot.people import Level
+from opsbot.people import People
+import opsbot.sql as sql
+from opsbot.strings import Strings
 
 user_list = People()
 maybe = []
