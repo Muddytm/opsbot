@@ -10,8 +10,8 @@ from slackbot.bot import listen_to
 from slackbot.bot import respond_to
 
 import opsbot.config as config
-from opsbot.people import Level
-from opsbot.people import People
+#from opsbot.people import Level
+#from opsbot.people import People
 import opsbot.sql as sql
 from opsbot.strings import Strings
 
@@ -23,6 +23,28 @@ with open(config.WORDPATH) as w:
     wordlist = w.readlines()
 for word in wordlist:
     maybe.append(word.strip())
+
+
+@respond_to('^upgrade (.*) (\d*)')
+def upgrade(message, target, num):
+    """Upgrade a user to the specified approval level."""
+    users = load_slack_users(message._client.users)
+    user = user_list.find_user(target)
+
+    if user is not None:
+        target_name = user.details["name"]
+        if user.is_unknown:
+            message.reply("Upgrading user: \"{}\"".format(target_name))
+            user_list[user.details["id]].level = Level.Approved
+            user_list.save()
+        elif user.is_denied:
+            message.reply(Strings['MARKED_DENIED'])
+        else:
+            message.reply("{} is already: {}.".format(target_name,
+                                                      user.level.name))
+    else:
+        message.reply(Strings['USER_NOT_FOUND'].format(target))
+
 
 
 def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS):
@@ -63,12 +85,15 @@ def generate_password(pass_fmt=config.PASSWORD_FORMAT):
     return new_pass
 
 
-def load_users(everyone):
+def load_slack_users(everyone):
     """Load slack user data into the People object."""
-    if user_list.loaded:
-        return
+    #if user_list.loaded:
+    #    return
+    users = []
     for user in iteritems(everyone):
-        user_list.load(user[1])
+        users.append(user)
+
+    return users
 
 
 def list_to_names(names):
@@ -132,7 +157,7 @@ def channels(message):
             friendlyname = chan['user']
             try:
                 friendlyname = chan['user'].name
-            except KeyError:
+            except (KeyError, AttributeError):
                 pass
             message.reply("User channel: {} ({})".format(friendlyname,
                                                          chan['id']))

@@ -8,24 +8,25 @@ import opsbot.config as config
 people_path = config.DATA_PATH + 'people.json'
 
 
-class Level(IntEnum):
-    """The levels a person can be."""
-
-    Admin = 50
-    Expired = 5
-    Unknown = 0
-    Denied = -10
-    Approved = 10
+# class Level(IntEnum):
+#     """The levels a person can be."""
+#
+#     Admin = 50
+#     Expired = 5
+#     Unknown = 0
+#     Denied = -10
+#     Approved = 10
 
 
 class Person(object):
     """One person and their associated info."""
 
-    def __init__(self, id, level):
+    def __init__(self, name, id, level, metadata):
         """Set up a user = all we need is their level at this point."""
-        self.level = Level(level)
+        self.name = name
         self.id = id
-        self.details = {}
+        self.level = level
+        self.metadata = metadata
 
     @property
     def loaded(self):
@@ -90,7 +91,7 @@ class People(dict):
         with open(people_path) as data_file:
             people = json.load(data_file)
         for person in people['people']:
-            newbie = Person(person, people['people'][person])
+            newbie = Person()
             self[person] = newbie
 
     def save(self):
@@ -124,6 +125,7 @@ class People(dict):
     def find_user(self, name):
         """Return a user with the specified name."""
         for person in self.keys():
+            #if self[person].details['name'] == name:
             if self[person].details['name'] == name:
                 return self[person]
         return None

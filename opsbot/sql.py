@@ -130,14 +130,21 @@ def sql_user_exists(user, database=None):
     login) or the specified database (in which case it looks for a
     database user)
     """
-    table = 'sys.sql_logins'
-    if database is not None:
-        table = 'sysusers'
-    sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
-    count = execute_sql_count(sql, database)
-    if (count > 0):
+    #table = 'sys.sql_logins'
+    #if database is not None:
+    #    table = 'sysusers'
+    #sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
+    #count = execute_sql_count(sql, database)
+    #if (count > 0):
+    #    return True
+    #return False
+    with open("data/sql_users.json") as sql_users:
+        users = json.load(sql_users)
+
+    if user in users:
         return True
-    return False
+    else:
+        return False
 
 
 def database_list():
@@ -151,7 +158,7 @@ def build_database_list():
     """Get a list of databases and save them to file."""
     #dbs = execute_sql('SELECT * FROM sys.databases', '', True)
     #db_list = {}
-    db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db"}
+    db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
     #svr = config.AZURE_SQL_SERVERS[0]
     #for db in dbs:
     #    if db[0] == 'master':
