@@ -33,7 +33,7 @@ AZURE_DSN = os.getenv('AZURE_SQL_DSN')
 AZURE_SQL_SERVERS = os.getenv('AZURE_SQL_SERVERS', '').split(',')
 
 # Slack channel to listen to and do group replies in:
-AUTH_CHANNEL = os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL = "bottesting" #os.getenv('AUTH_SLACK_CHANNEL')
 
 # URL of a help document:
 HELP_URL = os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')

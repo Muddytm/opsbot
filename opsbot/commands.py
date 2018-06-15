@@ -52,13 +52,35 @@ def get_users():
         return json.load(infile)
 
 
+def get_admins():
+    """Return list of users who are admins (approval level 50)."""
+    users = get_users()
+    admins = []
+    for user in users:
+        if user["approval_level"] == 50:
+            admins.append(user)
+
+    return admins
+
+
 def save_users(user_list):
     """Save dict of users to users.json."""
     with open(user_path, "w") as outfile:
         json.dump(user_list, outfile)
 
 
-@respond_to('^upgrade (.*) (\d*)')
+def level_name(num):
+    """Return appropriate approval level name for the number parameter.
+
+    Ex: 50 = "admin".
+    """
+    level_names = {"50": "admin", "10": "approved", "5": "expired",
+                   "0": "unknown", "-10": "denied"}
+
+    return level_names[str(num)]
+
+
+@respond_to('^upgrade (.*) (.*)')
 def upgrade(message, target, num):
     """Upgrade a user to the specified approval level."""
     users = get_users()
@@ -66,7 +88,11 @@ def upgrade(message, target, num):
     for user in users:
         if user["name"] != target:
             continue
-        user["approval_level"] = num
+        try:
+            user["approval_level"] = int(num)
+        except Exception:
+            message.reply("That's not a number, ya dingus. :)")
+            return
 
     save_users(users)
 
@@ -168,7 +194,10 @@ def have_channel_open(channels, user):
 
 @respond_to('channels')
 def channels(message):
-    """Display summary of channels in Slack."""
+    """Display summary of channels in Slack.
+
+    TODO: fix this :)
+    """
     for channel in message._client.channels:
         if 'is_member' in channel:
             message.reply("{} ({})".format(chan['name'], chan['id']))
@@ -212,36 +241,46 @@ def channel_help(message):
 @respond_to('^approve me$', re.IGNORECASE)
 def approve_me(message):
     """Send request to be approved to the approvers/admins."""
-    load_users(message._client.users)
-    sender_id = message._get_user_id()
-    target = user_list[sender_id].details['name']
-    if (user_list[sender_id].is_unknown):
-        message.reply(Strings['APPROVER_REQUEST'])
-        names = list_to_names(user_list.admin_list)
-        approval_message = Strings[
-            'APPROVER_REQUEST_DETAIL'].format(">, <@".join(names), target)
-        message._client.send_message(config.AUTH_CHANNEL, approval_message)
-    else:
-        message.reply(
-            "Your status is already: " + user_list[sender_id].level.name)
+    users = get_users()
+    for user in users:
+        if user["id"] == message._get_user_id():
+            if user["approval_level"]: # == 0: # Unknown
+                message.reply(Strings['APPROVER_REQUEST'])
+                admins = get_admins()
+                names = []
+                for admin in admins:
+                    names.append(admin["name"])
+
+                approval_message = Strings[
+                    'APPROVER_REQUEST_DETAIL'].format(">, <@".join(names), user["name"])
+
+                #message._client.send_message(config.AUTH_CHANNEL, approval_message)
+                message._client.send_message("mcg_prod_auth", approval_message)
+            else:
+                message.reply("Your approval level is already: " + int(user["approval_level"]))
 
 
 @listen_to('^approve me$', re.IGNORECASE)
 def approve_me_group(message):
     """Reply to 'approve me' in the group channel (redirect to a DM)."""
-    load_users(message._client.users)
+    users = get_users()
     sender_id = message._get_user_id()
 
-    if (user_list[sender_id].is_unknown):
-        message.reply(Strings['APPROVE_ME_REQUEST'])
-    else:
-        self_name = user_list[sender_id].level.name
-        message.reply("Your status is already: {}".format(self_name))
+    for user in users:
+        if user["id"] == sender_id:
+            if (user["approval_level"] == 0):
+                message.reply(Strings['APPROVE_ME_REQUEST'])
+            else:
+                self_name = level_name(user["approval_level"])
+                message.reply("Your status is already: {}".format(self_name))
 
 
-@listen_to('^approve (\S*)$')
+#@listen_to('^approve (\S*)$')
 def approve_person(message, target):
-    """Approve a user, if the author of the msg is an admin."""
+    """Approve a user, if the author of the msg is an admin.
+
+    TODO: get this working
+    """
     load_users(message._client.users)
     if target == 'me':
         return
@@ -269,35 +308,51 @@ def approve_person(message, target):
 @respond_to('^admins$')
 def admin_list(message):
     """Display a list of all admins."""
-    load_users(message._client.users)
-    names = list_to_names(user_list.admin_list)
+    admins = get_admins()
+    names = []
+    for admin in admins:
+        names.append(admin["name"])
+
     message.reply('My admins are: {}'.format(", ".join(names)))
 
 
 @respond_to('^approved$')
 def approved_list(message):
     """Display a list of all approved users."""
-    load_users(message._client.users)
-    names = list_to_names(user_list.approved_list)
+    users = get_users()
+    names = []
+    for user in users:
+        if user["approval_level"] == 10: # "Approved" level
+            names.append(user["name"])
+
     message.reply('Approved users are: {}'.format(", ".join(names)))
 
 
 @respond_to('^denied$')
 def denied_list(message):
     """Display a list of denied users."""
-    load_users(message._client.users)
-    names = list_to_names(user_list.denied_list)
-    message.reply('Denied user are: {}'.format(", ".join(names)))
+    users = get_users()
+    names = []
+    for user in users:
+        if user["approval_level"] == -10: # "Denied" level
+            names.append(user["name"])
+
+    message.reply('Denied users are: {}'.format(", ".join(names)))
 
 
 @respond_to('^unknown$')
 def unknown_list(message):
     """Display a list of users without a known status."""
-    load_users(message._client.users)
-    names = list_to_names(user_list.unknown_list)
+    users = get_users()
+    names = []
+    for user in users:
+        if user["approval_level"] == 0: # "Unknown" level
+            names.append(user["name"])
+
     if (len(names) > 100):
         message.reply(Strings['TOO_MANY_USERS'].format(len(names)))
         return
+
     message.reply('Unknown users are: {}'.format(", ".join(names)))
 
 
@@ -321,10 +376,7 @@ def body(message):
 @respond_to('^users$')
 def users(message):
     """Display number of total Slack users."""
-    user_list = []
-    for userid, user in iteritems(message._client.users):
-        user_list.append(user["name"])
-    message.reply(Strings['USERS_FOUND'].format(len(user_list)))
+    message.reply(Strings['USERS_FOUND'].format(len(get_users())))
 
 
 @respond_to('^search (.*)')
@@ -332,9 +384,10 @@ def search_user(message, search):
     """Return users found from a search."""
     found = []
     search = search.lower()
-    for userid, user in iteritems(message._client.users):
+    users = get_users()
+    for user in users:
         if search in user['name'].lower():
-            found.append('{} ({})'.format(user['name'], userid))
+            found.append('{} ({})'.format(user['name'], user["id"]))
     if len(found) == 0:
         message.reply('No user found by that key: {}.'.format(search))
         return
@@ -343,7 +396,7 @@ def search_user(message, search):
 
 @respond_to('^details (.*)')
 def find_user_by_name(message, username):
-    """Reurn the JSON of a given user."""
+    """Return the JSON of a given user."""
     for userid, user in iteritems(message._client.users):
         if user['name'] == username:
             message.reply(pretty_json(user, True))
@@ -355,8 +408,8 @@ def find_user_by_name(message, username):
     message.reply('No user found by that name: {}.'.format(username))
 
 
-@respond_to('^server (\S*)$')
-@listen_to('^server (\S*)$')
+#@respond_to('^server (\S*)$')
+#@listen_to('^server (\S*)$')
 def find_server(message, db):
     """Display the server a given database is on."""
     db_list = sql.database_list()
