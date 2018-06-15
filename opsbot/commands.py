@@ -15,7 +15,9 @@ import opsbot.config as config
 import opsbot.sql as sql
 from opsbot.strings import Strings
 
-user_list = People()
+user_path = config.DATA_PATH + 'users.json'
+
+#user_list = People()
 maybe = []
 
 # Build our word list:
@@ -25,26 +27,51 @@ for word in wordlist:
     maybe.append(word.strip())
 
 
+@respond_to("load")
+def load_slack_users(message):
+    """Put Slack users into JSON and dump into users.json."""
+    user_list = []
+    for userid, user in iteritems(message._client.users):
+        user_info = {}
+        user_info["name"] = user["name"]
+        user_info["id"] = user["id"]
+        user_info["approval_level"] = 0 # By default, not approved or denied
+        user_info["metadata"] = "" # Metadata to be edited later on
+
+        user_list.append(user_info)
+
+    with open(user_path, 'w') as outfile:
+        json.dump(user_list, outfile)
+
+    message.reply("Successfully loaded users into json file.")
+
+
+def get_users():
+    """Return dict of users stored in users.json."""
+    with open(user_path, "r") as infile:
+        return json.load(infile)
+
+
+def save_users(user_list):
+    """Save dict of users to users.json."""
+    with open(user_path, "w") as outfile:
+        json.dump(user_list, outfile)
+
+
 @respond_to('^upgrade (.*) (\d*)')
 def upgrade(message, target, num):
     """Upgrade a user to the specified approval level."""
-    users = load_slack_users(message._client.users)
-    user = user_list.find_user(target)
+    users = get_users()
 
-    if user is not None:
-        target_name = user.details["name"]
-        if user.is_unknown:
-            message.reply("Upgrading user: \"{}\"".format(target_name))
-            user_list[user.details["id]].level = Level.Approved
-            user_list.save()
-        elif user.is_denied:
-            message.reply(Strings['MARKED_DENIED'])
-        else:
-            message.reply("{} is already: {}.".format(target_name,
-                                                      user.level.name))
-    else:
-        message.reply(Strings['USER_NOT_FOUND'].format(target))
+    for user in users:
+        if user["name"] != target:
+            continue
+        user["approval_level"] = num
 
+    save_users(users)
+
+    message.reply("Successfully upgraded user {} to approval level "
+                  "{}.".format(target, num))
 
 
 def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS):
@@ -85,28 +112,25 @@ def generate_password(pass_fmt=config.PASSWORD_FORMAT):
     return new_pass
 
 
-def load_slack_users(everyone):
-    """Load slack user data into the People object."""
-    #if user_list.loaded:
-    #    return
-    users = []
-    for user in iteritems(everyone):
-        users.append(user)
-
-    return users
+# def load_users(everyone):
+#     """Load slack user data into the People object."""
+#     if user_list.loaded:
+#         return
+#     for user in iteritems(everyone):
+#         user_list.load(user[1])
 
 
-def list_to_names(names):
-    """Return just the names from user objects from the names object.
-
-    Given a list of Person objects (typically a subset of the People object)
-    reduce the list from Person objects just to a simple array of their
-    names.
-    """
-    names_list = []
-    for n in names:
-        names_list.append(names[n].details['name'])
-    return names_list
+# def list_to_names(names):
+#     """Return just the names from user objects from the names object.
+#
+#     Given a list of Person objects (typically a subset of the People object)
+#     reduce the list from Person objects just to a simple array of their
+#     names.
+#     """
+#     names_list = []
+#     for n in names:
+#         names_list.append(names[n].details['name'])
+#     return names_list
 
 
 def pretty_json(data, with_ticks=False):
@@ -132,7 +156,7 @@ def find_channel(channels, user):
 
 
 def have_channel_open(channels, user):
-    """Return True if the user as a DM channel open with the bot."""
+    """Return True if the user has a DM channel open with the bot."""
     for x in channels:
         chan = channels[x]
         if 'is_member' in chan:
@@ -145,23 +169,18 @@ def have_channel_open(channels, user):
 @respond_to('channels')
 def channels(message):
     """Display summary of channels in Slack."""
-    load_users(message._client.users)
-    for x in message._client.channels:
-        chan = message._client.channels[x]
-        if 'is_member' in chan:
-            if chan['is_member']:
-                message.reply("{} ({})".format(chan['name'], chan['id']))
-#                message.reply(pretty_json(chan, True))
-        elif 'is_im' in chan:
+    for channel in message._client.channels:
+        if 'is_member' in channel:
+            message.reply("{} ({})".format(chan['name'], chan['id']))
+        elif 'is_im' in channel:
             print(chan)
             friendlyname = chan['user']
             try:
-                friendlyname = chan['user'].name
+                friendlyname = chan['user']["name"]
             except (KeyError, AttributeError):
                 pass
             message.reply("User channel: {} ({})".format(friendlyname,
                                                          chan['id']))
-#            message.reply(pretty_json(chan, True))
 
 
 @respond_to('password$')
