@@ -275,34 +275,35 @@ def approve_me_group(message):
                 message.reply("Your status is already: {}".format(self_name))
 
 
-#@listen_to('^approve (\S*)$')
+@listen_to('^approve (\S*)$')
 def approve_person(message, target):
     """Approve a user, if the author of the msg is an admin.
 
     TODO: get this working
     """
-    load_users(message._client.users)
+    users = get_users()
     if target == 'me':
         return
-    user = user_list.find_user(target)
-
-    approver = message._get_user_id()
-    if user_list[approver].is_admin:
-        if user is not None:
-            target_name = user.details['name']
-            if user.is_unknown:
-                message.reply("Approving user: '{}'".format(target_name))
-                user_list[user.details['id']].level = Level.Approved
-                user_list.save()
-            elif user.is_denied:
-                message.reply(Strings['MARKED_DENIED'])
-            else:
-                message.reply("{} is already: {}.".format(target_name,
-                                                          user.level.name))
-        else:
-            message.reply(Strings['USER_NOT_FOUND'].format(target))
-    else:
-        message.reply(Strings['CANT_APPROVE'])
+    for user in users:
+        if user["name"] == target:
+            approver = message._get_user_id()
+            admins = get_admins()
+            for admin in admins:
+                if admin["id"] == approver:
+                    if user is not None:
+                        if user["approval_level"] == 0:
+                            message.reply("Approving user: '{}'".format(target))
+                            user["approval_level"] = 10
+                            save_users(users)
+                        elif user["approval_level"] == -10:
+                            message.reply(Strings['MARKED_DENIED'])
+                        else:
+                            message.reply("{} is already: {}.".format(target,
+                                                                      level_name(user["approval_level"])))
+                    else:
+                        message.reply(Strings['USER_NOT_FOUND'].format(target))
+                else:
+                    message.reply(Strings['CANT_APPROVE'])
 
 
 @respond_to('^admins$')
@@ -429,21 +430,30 @@ def no_reason(message, db):
 def grant_sql_access(message, db, reason, readonly):
     """Grant access for the user to a the specified database."""
     db_list = sql.database_list()
-    requested_dbs = fnmatch.filter(db_list, db)
-    load_users(message._client.users)
+    requested_dbs = []
+    for db_name in db_list:
+        if db in db_name:
+            requested_dbs.append(db_name)
+
+    users = get_users()
     requester = message._get_user_id()
-    if user_list[requester].is_approved:
+    for user in users:
+        if user["id"] == requester:
+            name = user["name"]
+            level = user["approval_level"]
+
+    if level == 10:
         if (len(requested_dbs)) == 0:
             message.reply(Strings['DATABASE_UNKNOWN'].format(db))
             return
 
         password = generate_password()
         chan = find_channel(message._client.channels, message._get_user_id())
-        offset = int(user_list[requester].details['tz_offset'])
-        expiration = pass_good_until() + timedelta(seconds=offset)
+        #offset = int(user_list[requester].details['tz_offset']) # To be revisited later - timezone shenanigans
+        expiration = pass_good_until() # + timedelta(seconds=offset)
         created_flag = False
         for db in requested_dbs:
-            created = sql.create_sql_login(user_list[requester].name,
+            created = sql.create_sql_login(name,
                                            password,
                                            db,
                                            expiration,
@@ -463,7 +473,7 @@ def grant_sql_access(message, db, reason, readonly):
         else:
             pass_reused = Strings['PASSWORD_REUSED'].format(db)
             message._client.send_message(chan, pass_reused)
-        slack_id_msg = Strings['SLACK_ID'].format(user_list[requester].name)
+        slack_id_msg = Strings['SLACK_ID'].format(name)
         message._client.send_message(chan, slack_id_msg)
         return
     if user_list[requester].is_denied:

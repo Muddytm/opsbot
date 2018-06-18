@@ -2,7 +2,8 @@ Gonna make this look *fancier* later on, but for now, just gonna write down some
 
 active_sql.json looks something like this:
 
-```{"banjo": "2018-06-14T14:32:00.00"}
+```json
+{"banjo": "2018-06-14T14:32:00.00"}
 ```
 
 databases.json looks like this:
