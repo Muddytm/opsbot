@@ -442,7 +442,7 @@ def grant_sql_access(message, db, reason, readonly):
             name = user["name"]
             level = user["approval_level"]
 
-    if level == 10:
+    if (level == 10) or (level == 50):
         if (len(requested_dbs)) == 0:
             message.reply(Strings['DATABASE_UNKNOWN'].format(db))
             return
@@ -476,7 +476,7 @@ def grant_sql_access(message, db, reason, readonly):
         slack_id_msg = Strings['SLACK_ID'].format(name)
         message._client.send_message(chan, slack_id_msg)
         return
-    if user_list[requester].is_denied:
+    if level == -10:
         message.reply('Request denied')
         return
     message.reply(Strings['NOT_APPROVED_YET'])

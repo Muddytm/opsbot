@@ -76,30 +76,21 @@ def create_sql_login(user, password, database, expire, readonly, reason):
         with open(sql_logins) as data_file:
             active_logins = json.load(data_file)
 
-    active_dbs = {}
-    if os.path.isfile(active_databases):
-        with open(active_databases) as data_file:
-            active_dbs = json.load(data_file)
-
     user_exists = sql_user_exists(user)
     if user not in active_logins or not user_exists:
-        if user_exists:
-            sql = "ALTER LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
-        else:
-            sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
-        print ("SQL: " + sql) #execute_sql(sql)
+        active_logins[user] = {}
+        # if user_exists:
+        #     #sql = "ALTER LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
+        #     active_logins[user][database] = expire.isoformat()
+        # else:
+        #     #sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
+        #     active_logins[user][database] = expire.isoformat()
+        #print ("SQL: " + sql) #execute_sql(sql)
         created_login = True
 
     active_logins[user][database] = expire.isoformat()
     with open(sql_logins, 'w') as outfile:
         json.dump(active_logins, outfile)
-
-    # if user not in active_dbs:
-    #     active_dbs[user] = {}
-    # if database not in active_dbs[user]:
-    #     active_dbs[user].append(database)
-    # with open(active_databases, 'w') as outfile:
-    #     json.dump(active_dbs, outfile)
 
     #delete_sql_user(user, database)
     sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
@@ -114,13 +105,16 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     rights = 'readonly'
     if not readonly:
         rights = 'readwrite'
-    log = '{},{},{},{},{}\n'.format(user,
+    log = '{} - {}: {}, {}, {}\n'.format(datetime.today(),
+                                    user,
                                     database,
                                     rights,
-                                    datetime.today(),
                                     reason)
     filename = datetime.today().strftime("%Y-%m.csv")
-    fd = open('{}{}'.format(sql_log_base, filename), 'a')
+    if os.path.exists('{}{}'.format(sql_log_base, filename)):
+        fd = open('{}{}'.format(sql_log_base, filename), 'a')
+    else:
+        fd = open('{}{}'.format(sql_log_base, filename), "w+")
     fd.write(log)
     fd.close()
     return created_login
@@ -184,17 +178,18 @@ def delete_expired_users():
         people = json.load(data_file)
     people_changed = False
     for user, dbs in people.items():
-        for db, expiration in dbs.items():
+        for db, expiration in list(dbs.items()):
             delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
-            expired = datetime.now() - delta
+            expired = datetime.now() # - delta
             user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
+            #print (str(user_expires) + " vs " + str(expired))
             if user_expires < expired:
                 logging.info('User {} expired on database {}. Removing.'.format(user, db))
                 if sql_user_exists(user):
                     sql = "DROP LOGIN [{}]".format(user)
                     #execute_sql(sql, database)
                     print ("SQL: " + sql)
-                    people[user][db] = 0
+                    del people[user][db]
                     people_changed = True
             else:
                 logging.debug('User: {}, on database: {}, expires: {}'.format(user, db, people[user][db]))

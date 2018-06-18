@@ -2,6 +2,7 @@ data/users.json
 data/databases.json
 data/active_sql.json
 data/sql_users.json
+log/*.csv
 slackbot_settings.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
