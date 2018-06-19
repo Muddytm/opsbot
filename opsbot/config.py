@@ -61,6 +61,9 @@ WORDPATH = DATA_PATH + 'wordlist.txt'
 # How many hours is a generated account good for?
 HOURS_TO_GRANT_ACCESS = 4
 
+# How many hours before expiration should users be notified of expiration?
+NOTIFICATION_THRESHOLD = 1
+
 # When sent to the slack channel, this is the printed format:
 # '%b-%d %I:%M%p' looks like 'Feb-08 02:41PM'
 TIME_PRINT_FORMAT = '%b-%d %I:%M%p'

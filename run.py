@@ -36,6 +36,9 @@ def main():
     delete_user_task = opsbot.tasks.DeleteUser()
     task_threads.append(delete_user_task)
 
+    #notify_user_task = opsbot.tasks.NotifyUser()
+    #task_threads.append(notify_user_task)
+
     for task in task_threads:
         task.start()
 

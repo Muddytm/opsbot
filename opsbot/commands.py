@@ -8,6 +8,7 @@ import re
 from six import iteritems
 from slackbot.bot import listen_to
 from slackbot.bot import respond_to
+import time
 
 import opsbot.config as config
 #from opsbot.people import Level
@@ -44,6 +45,27 @@ def load_slack_users(message):
         json.dump(user_list, outfile)
 
     message.reply("Successfully loaded users into json file.")
+
+
+@respond_to("start")
+def notify(message):
+    """Start a minute-by-minute check of user expiration times and notify
+       users when their time is almost up."""
+    message.reply("Started expiration checking process; users will now be "
+                  "notified if their access is about to expire.")
+    while True:
+        info = sql.notify_users()
+        for person in info:
+            if len(info[person]) == 0:
+                continue
+            users = get_users()
+            for user in users:
+                if user["name"] == person:
+                    chan = find_channel(message._client.channels, user["id"])
+                    message._client.send_message(chan,
+                                                 Strings['NOTIFY_EXPIRE'].format(", ".join(info[person])))
+        time.sleep(60)
+
 
 
 def get_users():
@@ -138,27 +160,6 @@ def generate_password(pass_fmt=config.PASSWORD_FORMAT):
     return new_pass
 
 
-# def load_users(everyone):
-#     """Load slack user data into the People object."""
-#     if user_list.loaded:
-#         return
-#     for user in iteritems(everyone):
-#         user_list.load(user[1])
-
-
-# def list_to_names(names):
-#     """Return just the names from user objects from the names object.
-#
-#     Given a list of Person objects (typically a subset of the People object)
-#     reduce the list from Person objects just to a simple array of their
-#     names.
-#     """
-#     names_list = []
-#     for n in names:
-#         names_list.append(names[n].details['name'])
-#     return names_list
-
-
 def pretty_json(data, with_ticks=False):
     """Return the JSON data in a prettier format.
 
@@ -244,7 +245,7 @@ def approve_me(message):
     users = get_users()
     for user in users:
         if user["id"] == message._get_user_id():
-            if user["approval_level"]: # == 0: # Unknown
+            if user["approval_level"] == 0: # Unknown
                 message.reply(Strings['APPROVER_REQUEST'])
                 admins = get_admins()
                 names = []

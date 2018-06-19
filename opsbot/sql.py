@@ -18,6 +18,8 @@ sql_logins = config.DATA_PATH + 'active_sql.json'
 # active_databases = config.DATA_PATH + 'active_dbs.json'
 db_path = config.DATA_PATH + 'databases.json'
 
+notify_time = config.NOTIFICATION_THRESHOLD
+
 
 def execute_sql(sql, database=None, get_rows=False):
     """Execute a SQL statement."""
@@ -77,7 +79,7 @@ def create_sql_login(user, password, database, expire, readonly, reason):
             active_logins = json.load(data_file)
 
     user_exists = sql_user_exists(user)
-    if user not in active_logins or not user_exists:
+    if (user not in active_logins) or (not user_exists) or (not active_logins[user]):
         active_logins[user] = {}
         # if user_exists:
         #     #sql = "ALTER LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
@@ -191,13 +193,46 @@ def delete_expired_users():
                     print ("SQL: " + sql)
                     del people[user][db]
                     people_changed = True
+
+                    with open("data/notified.json") as notified:
+                        notified_users = json.load(notified)
+
+                    notified_users[user].remove(db)
+
+                    with open("data/notified.json", 'w') as outfile:
+                        json.dump(notified_users, outfile)
             else:
                 logging.debug('User: {}, on database: {}, expires: {}'.format(user, db, people[user][db]))
-    # people = [p for p in people if people[p] is not 0]
+
     if people_changed:
-        # new_people = {}
-        # for p in people:
-        #     if people[p] is not 0:
-        #         new_people[p] = people[p]
         with open(sql_logins, 'w') as outfile:
             json.dump(people, outfile)
+
+
+def notify_users():
+    """Notify users that their db access is about to expire."""
+    with open(sql_logins) as data_file:
+        people = json.load(data_file)
+
+    with open("data/notified.json") as notified:
+        notified_users = json.load(notified)
+
+    info = {}
+
+    for user in people:
+        info[user] = []
+        if user not in notified_users:
+            notified_users[user] = []
+        for db in people[user]:
+            user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
+            expired = datetime.now()
+            delta = timedelta(hours=notify_time)
+            if user_expires > expired:
+                if ((user_expires - expired) < delta) and (db not in notified_users[user]):
+                    info[user].append(db)
+                    notified_users[user].append(db)
+
+    with open("data/notified.json", 'w') as outfile:
+        json.dump(notified_users, outfile)
+
+    return info

@@ -83,6 +83,14 @@ class DeleteUser(TaskThread):
         logging.debug('Checking users to delete.')
         sql.delete_expired_users()
 
+class NotifyUser(TaskThread):
+    """Check user list and notify any users of upcoming db access expirations."""
+
+    def thread_worker(self):
+        """Check users and notify when appropriate."""
+        logging.debug('Notifying users of upcoming expiration.')
+        sql.notify_users()
+
 
 class DBList(TaskThread):
     """Maintain the list of databases."""
