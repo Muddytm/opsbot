@@ -3,8 +3,8 @@
 This module handles all of the ODBC interaction for the slackbot, primarily
 creating and removing users.
 """
+import opsbot.customlogging as logging
 import json
-import logging
 import os
 import pyodbc
 
@@ -32,7 +32,7 @@ def execute_sql(sql, database=None, get_rows=False):
         db = 'database=' + database
     conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
     connection = pyodbc.connect(conn_string)
-    logging.debug("On database '{}', running SQL: {}".format(database, sql))
+    #logging.debug("On database '{}', running SQL: {}".format(database, sql))
     cursor = connection.execute(sql)
     if get_rows:
         rows = cursor.fetchall()
@@ -107,18 +107,12 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     rights = 'readonly'
     if not readonly:
         rights = 'readwrite'
-    log = '{} - {}: {}, {}, {}\n'.format(datetime.today(),
-                                    user,
+    log = '{}: {}, {}, {}\n'.format(user,
                                     database,
                                     rights,
                                     reason)
-    filename = datetime.today().strftime("%Y-%m.csv")
-    if os.path.exists('{}{}'.format(sql_log_base, filename)):
-        fd = open('{}{}'.format(sql_log_base, filename), 'a')
-    else:
-        fd = open('{}{}'.format(sql_log_base, filename), "w+")
-    fd.write(log)
-    fd.close()
+    print (log)
+    logging.info(log)
     return created_login
 
 
@@ -137,7 +131,7 @@ def sql_user_exists(user, database=None):
     #if (count > 0):
     #    return True
     #return False
-    with open("data/active_sql.json") as sql_users:
+    with open(sql_logins) as sql_users:
         users = json.load(sql_users)
 
     if database:
@@ -202,7 +196,8 @@ def delete_expired_users():
                     with open("data/notified.json", 'w') as outfile:
                         json.dump(notified_users, outfile)
             else:
-                logging.debug('User: {}, on database: {}, expires: {}'.format(user, db, people[user][db]))
+                pass
+                #logging.info('User: {}, on database: {}, expires: {}'.format(user, db, people[user][db]))
 
     if people_changed:
         with open(sql_logins, 'w') as outfile:

@@ -4,7 +4,7 @@ Set up the slack bot and any surrounding work needed to create SQL
 access for users.
 """
 
-import logging
+import opsbot.customlogging as logging
 import threading
 import time
 
@@ -13,7 +13,7 @@ from slackbot.bot import Bot
 import opsbot.config as config
 import opsbot.tasks
 
-logging.basicConfig(level=config.LOGGING_LEVEL)
+#logging.basicConfig(level=config.LOGGING_LEVEL)
 
 task_threads = []
 
