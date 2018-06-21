@@ -63,7 +63,7 @@ def delete_sql_user(user, database):
         return
     sql = "DROP USER IF EXISTS [{}]".format(user)
     #execute_sql(sql, database)
-    print ("This is where I would tell sql to: " + sql)
+    print ("SQL: " + sql)
 
 
 def create_sql_login(user, password, database, expire, readonly, reason):
@@ -155,7 +155,7 @@ def database_list():
 
 def build_database_list():
     """Get a list of databases and save them to file."""
-    dbs = execute_sql('SELECT * FROM sys.databases', '', True)
+    #dbs = execute_sql('SELECT * FROM sys.databases', '', True)
     #db_list = {}
     db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
     #svr = config.AZURE_SQL_SERVERS[0]
@@ -191,7 +191,8 @@ def delete_expired_users():
                     with open("data/notified.json") as notified:
                         notified_users = json.load(notified)
 
-                    notified_users[user].remove(db)
+                    if (user in notified_users) and (db in notified_users[user]):
+                        notified_users[user].remove(db)
 
                     with open("data/notified.json", 'w') as outfile:
                         json.dump(notified_users, outfile)
