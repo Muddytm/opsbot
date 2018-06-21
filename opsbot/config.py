@@ -22,9 +22,9 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = os.getenv('AZURE_SQL_USER')
-AZURE_PASSWORD = os.getenv('AZURE_SQL_PASS')
-AZURE_DSN = os.getenv('AZURE_SQL_DSN')
+AZURE_USER = "authbot@sysops" #os.getenv('AZURE_SQL_USER')
+AZURE_PASSWORD = "Tq6gQeT9thm.$JCq7sQECCZYFzso%qYH" #os.getenv('AZURE_SQL_PASS')
+AZURE_DSN = "authbot" #os.getenv('AZURE_SQL_DSN')
 
 # This env variable should be a comma separated list of SQL servers to pull
 # from. Something like:

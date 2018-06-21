@@ -155,7 +155,7 @@ def database_list():
 
 def build_database_list():
     """Get a list of databases and save them to file."""
-    #dbs = execute_sql('SELECT * FROM sys.databases', '', True)
+    dbs = execute_sql('SELECT * FROM sys.databases', '', True)
     #db_list = {}
     db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
     #svr = config.AZURE_SQL_SERVERS[0]
