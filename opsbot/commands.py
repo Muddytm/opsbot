@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import timedelta
 import fnmatch
 import json
+import os
 import random
 import re
 from six import iteritems
@@ -17,6 +18,7 @@ import opsbot.sql as sql
 from opsbot.strings import Strings
 
 user_path = config.DATA_PATH + 'users.json'
+sql_log_base = config.LOG_PATH
 
 #user_list = People()
 maybe = []
@@ -493,3 +495,42 @@ def grant_access(message, db, reason):
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
     grant_sql_access(message, db, reason, False)
+
+
+@respond_to("logs")
+def logs_help(message):
+    """Return brief information on logs."""
+    message.reply(Strings["LOGS_HELP"])
+
+
+@respond_to("logs (.*)")
+def list_logs(message, target):
+    """Return logs from a specified day."""
+    try:
+        target_time = time.strptime(target, "%m-%d-%Y")
+        filename = "{}-{}.csv".format(target[:2], target[6:])
+        #print (filename)
+    except:
+        message.reply(Strings["LOGS_WRONG_FORMAT"])
+        return
+
+    log_lines = []
+    if os.path.exists('{}{}'.format(sql_log_base, filename)):
+        with open('{}{}'.format(sql_log_base, filename), 'r') as f:
+            log_lines = f.readlines()
+
+    if len(log_lines) == 0:
+        message.reply(Strings["NO_LOGS"])
+        return
+
+    final_lines = ""
+    for line in log_lines:
+        timestamp = line.split(" ")[0]
+        timestamp = timestamp[5:] + "-" + timestamp[:4]
+        if (time.strptime(timestamp, "%m-%d-%Y") == target_time):
+            final_lines += (line + "\n")
+        #print (timestamp)
+
+    if final_lines != "":
+        message.reply("```" + final_lines + "```")
+        return

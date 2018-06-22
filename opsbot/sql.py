@@ -111,7 +111,7 @@ def create_sql_login(user, password, database, expire, readonly, reason):
                                     database,
                                     rights,
                                     reason)
-    print (log)
+    #print (log)
     logging.info(log)
     return created_login
 
@@ -180,7 +180,7 @@ def delete_expired_users():
             user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
             #print (str(user_expires) + " vs " + str(expired))
             if user_expires < expired:
-                logging.info('User {} expired on database {}. Removing.'.format(user, db))
+                logging.info('User {} expired on database {}. Removing.\n'.format(user, db))
                 if sql_user_exists(user):
                     sql = "DROP LOGIN [{}]".format(user)
                     #execute_sql(sql, database)
@@ -198,7 +198,7 @@ def delete_expired_users():
                         json.dump(notified_users, outfile)
             else:
                 pass
-                #logging.info('User: {}, on database: {}, expires: {}'.format(user, db, people[user][db]))
+                #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
 
     if people_changed:
         with open(sql_logins, 'w') as outfile:

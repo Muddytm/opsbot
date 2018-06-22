@@ -18,3 +18,6 @@ PASSWORD_REUSED: "To access '{}', your password is the same as your previous gra
 SLACK_ID: "Reminder: use your Slack id ({}) as your username."
 NOT_APPROVED_YET: "Unfortunately, you're not approved yet. Start the approval process by sending me a direct message saying 'approve me'."
 NOTIFY_EXPIRE: "You have one hour left before your access expires for these databases: {}"
+LOGS_WRONG_FORMAT: "Wrong format; the format is MM-DD-YYYY. Example: ```logs 09-21-2017```"
+NO_LOGS: "There are no logs available for the specified period of time."
+LOGS_HELP: "To request logs for a specific day, type ```logs MM-DD-YYYY``` with the appropriate month, day, and year."
