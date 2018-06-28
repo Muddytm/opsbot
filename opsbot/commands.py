@@ -53,21 +53,51 @@ def load_slack_users(message):
 def notify(message):
     """Start a minute-by-minute check of user expiration times and notify
        users when their time is almost up."""
-    message.reply("Started expiration checking process; users will now be "
-                  "notified if their access is about to expire.")
+    message.reply(":gear: Started expiration checking process; users will now "
+                  "be notified if their access is about to expire.")
+    flag = "tenmins"
     while True:
-        info = sql.notify_users()
-        for person in info:
-            if len(info[person]) == 0:
-                continue
-            users = get_users()
-            for user in users:
-                if user["name"] == person:
-                    chan = find_channel(message._client.channels, user["id"])
-                    message._client.send_message(chan,
-                                                 Strings['NOTIFY_EXPIRE'].format(", ".join(info[person])))
-        time.sleep(60)
+        if flag is "tenmins":
+            info = sql.notify_users("hour")
+            flag = "hour"
+        elif flag is "hour":
+            info = sql.notify_users("tenmins")
+            flag = "deleted"
+        elif flag is "deleted":
+            flag = "tenmins"
 
+        if (flag is "hour") or (flag is "tenmins"):
+            for person in info:
+                if len(info[person]) == 0:
+                    continue
+                users = get_users()
+                for user in users:
+                    if user["name"] == person:
+                        chan = find_channel(message._client.channels, user["id"])
+                        if flag is "hour":
+                            message._client.send_message(chan,
+                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])))
+                        elif flag is "tenmins":
+                            message._client.send_message(chan,
+                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])))
+        elif flag is "deleted":
+            with open("data/deleted.json") as deleted:
+                deleted_users = json.load(deleted)
+
+            for person, dbs in deleted_users.items():
+                if not dbs: # If db list is empty
+                    break
+                users = get_users()
+                for user in users:
+                    if person == user["name"]:
+                        chan = find_channel(message._client.channels, user["id"])
+                        message._client.send_message(chan,
+                                                     Strings['EXPIRE'].format(", ".join(dbs)))
+                        deleted_users[person] = []
+                        with open("data/deleted.json", 'w') as outfile:
+                            json.dump(deleted_users, outfile)
+
+        time.sleep(10)
 
 
 def get_users():
@@ -115,7 +145,7 @@ def upgrade(message, target, num):
         try:
             user["approval_level"] = int(num)
         except Exception:
-            message.reply("That's not a number, ya dingus. :)")
+            message.reply(":x: That's not a number, ya dingus. :)")
             return
 
     save_users(users)
@@ -260,7 +290,7 @@ def approve_me(message):
                 #message._client.send_message(config.AUTH_CHANNEL, approval_message)
                 message._client.send_message("mcg_prod_auth", approval_message)
             else:
-                message.reply("Your approval level is already: " + int(user["approval_level"]))
+                message.reply(":x: Your approval level is already: " + int(user["approval_level"]))
 
 
 @listen_to('^approve me$', re.IGNORECASE)
@@ -275,7 +305,7 @@ def approve_me_group(message):
                 message.reply(Strings['APPROVE_ME_REQUEST'])
             else:
                 self_name = level_name(user["approval_level"])
-                message.reply("Your status is already: {}".format(self_name))
+                message.reply(":x: Your status is already: {}".format(self_name))
 
 
 @listen_to('^approve (\S*)$')
@@ -301,7 +331,7 @@ def approve_person(message, target):
                         elif user["approval_level"] == -10:
                             message.reply(Strings['MARKED_DENIED'])
                         else:
-                            message.reply("{} is already: {}.".format(target,
+                            message.reply(":x: {} is already: {}.".format(target,
                                                                       level_name(user["approval_level"])))
                     else:
                         message.reply(Strings['USER_NOT_FOUND'].format(target))
