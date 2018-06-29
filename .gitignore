@@ -1,6 +1,7 @@
 opsbot/config.py
 data/users.json
 data/databases.json
+data/databases_example.json
 data/active_sql.json
 data/sql_users.json
 data/notified.json

@@ -33,7 +33,7 @@ def execute_sql(sql, database=None, get_rows=False):
         db = 'database=' + database
     conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
     connection = pyodbc.connect(conn_string)
-    #logging.debug("On database '{}', running SQL: {}".format(database, sql))
+    #logging.info("SQL RAN: on database \"{}\", running SQL: {}".format(database, sql))
     cursor = connection.execute(sql)
     if get_rows:
         rows = cursor.fetchall()
@@ -156,14 +156,16 @@ def database_list():
 
 def build_database_list():
     """Get a list of databases and save them to file."""
-    #dbs = execute_sql('SELECT * FROM sys.databases', '', True)
-    #db_list = {}
-    db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
-    #svr = config.AZURE_SQL_SERVERS[0]
+    dbs = execute_sql('SELECT * FROM sys.databases', '', True)
     #for db in dbs:
-    #    if db[0] == 'master':
-    #        continue
-    #    db_list[db[0]] = svr
+    #    print (db)
+    db_list = {}
+    #db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
+    #svr = config.AZURE_SQL_SERVERS[0]
+    for db in dbs:
+        if db[0] == 'master':
+            continue
+        db_list[db[0]] = {}
     #logging.debug('Databases found: {}'.format(len(db_list)))
     with open(db_path, 'w') as outfile:
         json.dump(db_list, outfile)
@@ -181,7 +183,7 @@ def delete_expired_users():
             user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
             #print (str(user_expires) + " vs " + str(expired))
             if user_expires < expired:
-                logging.info('EXPIRATION: User {} expired on database {}. Removing.\n'.format(user, db))
+                logging.info('EXPIRATION: User {} expired on database {}. Removing...\n'.format(user, db))
                 if sql_user_exists(user):
                     sql = "DROP LOGIN [{}]".format(user)
                     #execute_sql(sql, database)
@@ -216,10 +218,9 @@ def delete_expired_users():
                     with open("data/deleted.json", 'w') as outfile:
                         json.dump(deleted_users, outfile)
 
-
-
+                    logging.info("User {} successfully removed.".format(user))
             else:
-                pass
+                logging.info("Something went wrong and user {} was not successfully removed.".format(user))
                 #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
 
     if people_changed:
