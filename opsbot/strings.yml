@@ -12,8 +12,9 @@ USERS_FOUND: ':grey_exclamation: {} users found. Try `search <name>` to find som
 DATABASE_SERVER: ':grey_exclamation: The database `{}` is on the server `<{}>`'
 DATABASE_UNKNOWN: ":x: This database ({}) doesn't seem to exist. Is it spelled correctly?"
 GRANT_EXAMPLE: ':x: You must supply a reason for access, like: ```grant {} salesforce ticket 123456```'
-GRANTED_ACCESS: ":heavy_check_mark: Granting access to database '{}' until {}. Password sent via direct message."
-PASSWORD_CREATED: ":heavy_check_mark: Password to access '{}': ```{}```"
+GRANTED_ACCESS: ":unlock: Granting access for database '{}' until {}. Password sent via direct message."
+EXTENDED_ACCESS: ":unlock: Extended access for database '{}' until {}. Password is unchanged."
+PASSWORD_CREATED: ":old_key: Password to access '{}': ```{}```"
 PASSWORD_REUSED: ":grey_exclamation: To access '{}', your password is the same as your previous grant request."
 SLACK_ID: ":grey_exclamation: Reminder: use your Slack id ({}) as your username."
 NOT_APPROVED_YET: ":x: Unfortunately, you're not approved yet. Start the approval process by sending me a direct message saying 'approve me'."
@@ -22,4 +23,4 @@ NOTIFY_EXPIRE_TENMINS: ":exclamation: You have ten minutes left before your acce
 LOGS_WRONG_FORMAT: ":x: Wrong format; the format is MM-DD-YYYY. Example: ```logs 09-21-2017```"
 NO_LOGS: ":exclamation: There are no logs available for the specified period of time."
 LOGS_HELP: ":grey_exclamation: To request logs for a specific day, type ```logs MM-DD-YYYY``` with the appropriate month, day, and year."
-EXPIRE: ":exclamation: Your granted access time has expired for the following database(s): {}"
+EXPIRE: ":closed_lock_with_key: Your granted access time has expired for the following database(s): {}"

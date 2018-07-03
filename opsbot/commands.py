@@ -48,7 +48,7 @@ def load_slack_users(message):
         json.dump(user_list, outfile)
 
     message.reply("Successfully loaded users into json file.")
-    logging.info("Loaded users into users.json")
+    logging.info("Loaded users into users.json.\n")
 
 
 @respond_to("start")
@@ -80,11 +80,11 @@ def notify(message):
                         if flag is "hour":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])))
-                            logging.info("NOTIFICATION: {} has been notified of DB access ending in an hour.".format(user["name"]))
+                            logging.info("NOTIFICATION: {} has been notified of DB access ending in an hour.\n".format(user["name"]))
                         elif flag is "tenmins":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])))
-                            logging.info("NOTIFICATION: {} has been notified of DB access ending in 10 minutes.".format(user["name"]))
+                            logging.info("NOTIFICATION: {} has been notified of DB access ending in 10 minutes.\n".format(user["name"]))
         elif flag is "deleted":
             with open("data/deleted.json") as deleted:
                 deleted_users = json.load(deleted)
@@ -98,7 +98,7 @@ def notify(message):
                         chan = find_channel(message._client.channels, user["id"])
                         message._client.send_message(chan,
                                                      Strings['EXPIRE'].format(", ".join(dbs)))
-                        logging.info("NOTIFICATION: {} has been notified of DB access expiring.".format(user["name"]))
+                        logging.info("NOTIFICATION: {} has been notified of DB access expiring.\n".format(user["name"]))
                         deleted_users[person] = []
                         with open("data/deleted.json", 'w') as outfile:
                             json.dump(deleted_users, outfile)
@@ -503,7 +503,10 @@ def grant_sql_access(message, db, reason, readonly):
             if created:
                 created_flag = True
         friendly_exp = friendly_time(expiration)
-        message.reply(Strings['GRANTED_ACCESS'].format(db, friendly_exp))
+        if created_flag:
+            message.reply(Strings['GRANTED_ACCESS'].format(db, friendly_exp))
+        else:
+            message.reply(Strings['EXTENDED_ACCESS'].format(db, friendly_exp))
         if (len(requested_dbs) > 1):
             message.reply('{} databases affected.'.format(len(requested_dbs)))
         if created_flag:
