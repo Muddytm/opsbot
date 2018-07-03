@@ -3,6 +3,7 @@ data/users.json
 data/databases.json
 data/databases_example.json
 data/active_sql.json
+data/active_sql_example.json
 data/sql_users.json
 data/notified.json
 data/deleted.json

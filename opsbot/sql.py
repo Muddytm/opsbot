@@ -13,7 +13,6 @@ from datetime import timedelta
 
 import opsbot.config as config
 
-sql_log_base = config.LOG_PATH
 sql_logins = config.DATA_PATH + 'active_sql.json'
 # active_databases = config.DATA_PATH + 'active_dbs.json'
 db_path = config.DATA_PATH + 'databases.json'
@@ -63,7 +62,7 @@ def delete_sql_user(user, database):
     if not sql_user_exists(user, database):
         return
     sql = "DROP USER IF EXISTS [{}]".format(user)
-    #execute_sql(sql, database)
+    execute_sql(sql, database)
     print ("SQL: " + sql)
 
 
@@ -79,31 +78,37 @@ def create_sql_login(user, password, database, expire, readonly, reason):
         with open(sql_logins) as data_file:
             active_logins = json.load(data_file)
 
-    user_exists = sql_user_exists(user)
-    if (user not in active_logins) or (not user_exists) or (not active_logins[user]):
+    user_exists = sql_user_exists(user, database)
+    # if not user_exists:
+    #     sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
+    #     execute_sql(sql, "master")
+    #     sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, password)
+    #     execute_sql(sql, "master")
+
+    if (not user_exists) or (not active_logins[user]):
         active_logins[user] = {}
         # if user_exists:
-        #     #sql = "ALTER LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
+        #     sql = "ALTER LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
         #     active_logins[user][database] = expire.isoformat()
-        # else:
-        #     #sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
-        #     active_logins[user][database] = expire.isoformat()
-        #print ("SQL: " + sql) #execute_sql(sql)
-        created_login = True
+
+    sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
+    active_logins[user][database] = expire.isoformat()
+    execute_sql(sql)
+    created_login = True
 
     active_logins[user][database] = expire.isoformat()
     with open(sql_logins, 'w') as outfile:
         json.dump(active_logins, outfile)
 
-    #delete_sql_user(user, database)
+    delete_sql_user(user, database)
     sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
-    #execute_sql(sql, database)
+    execute_sql(sql, database)
     print ("SQL: " + sql)
     role = 'db_datareader'
     if not readonly:
         role = 'db_datawriter'
     sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
-    #execute_sql(sql, database)
+    execute_sql(sql, database)
     print ("SQL: " + sql)
     rights = 'readonly'
     if not readonly:
@@ -124,27 +129,27 @@ def sql_user_exists(user, database=None):
     login) or the specified database (in which case it looks for a
     database user)
     """
-    #table = 'sys.sql_logins'
-    #if database is not None:
-    #    table = 'sysusers'
-    #sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
-    #count = execute_sql_count(sql, database)
-    #if (count > 0):
-    #    return True
-    #return False
-    with open(sql_logins) as sql_users:
-        users = json.load(sql_users)
-
-    if database:
-        if (user in users) and (database in users[user]):
-            return True
-        else:
-            return False
-    else:
-        if user in users:
-            return True
-        else:
-            return False
+    table = 'sys.sql_logins'
+    if database is not None:
+       table = 'sysusers'
+    sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
+    count = execute_sql_count(sql, database)
+    if (count > 0):
+       return True
+    return False
+    # with open(sql_logins) as sql_users:
+    #     users = json.load(sql_users)
+    #
+    # if database:
+    #     if (user in users) and (database in users[user]):
+    #         return True
+    #     else:
+    #         return False
+    # else:
+    #     if user in users:
+    #         return True
+    #     else:
+    #         return False
 
 
 def database_list():
@@ -157,8 +162,9 @@ def database_list():
 def build_database_list():
     """Get a list of databases and save them to file."""
     dbs = execute_sql('SELECT * FROM sys.databases', '', True)
-    #for db in dbs:
-    #    print (db)
+    people = execute_sql('SELECT * FROM sys.database_principals', '', True)
+    for person in people:
+        print (person)
     db_list = {}
     #db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
     #svr = config.AZURE_SQL_SERVERS[0]
@@ -184,9 +190,9 @@ def delete_expired_users():
             #print (str(user_expires) + " vs " + str(expired))
             if user_expires < expired:
                 logging.info('EXPIRATION: User {} expired on database {}. Removing...\n'.format(user, db))
-                if sql_user_exists(user):
-                    sql = "DROP LOGIN [{}]".format(user)
-                    #execute_sql(sql, database)
+                if sql_user_exists(user, db):
+                    sql = "DROP USER [{}]".format(user)
+                    execute_sql(sql, db)
                     print ("SQL: " + sql)
                     del people[user][db]
                     people_changed = True
@@ -218,12 +224,15 @@ def delete_expired_users():
                     with open("data/deleted.json", 'w') as outfile:
                         json.dump(deleted_users, outfile)
 
-                    logging.info("User {} successfully removed.".format(user))
+                    logging.info("User {} successfully removed.\n".format(user))
             else:
-                logging.info("Something went wrong and user {} was not successfully removed.".format(user))
+                pass
+                #logging.info("Something went wrong and user {} was not successfully removed.\n".format(user))
                 #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
 
     if people_changed:
+        sql = "DROP LOGIN [{}]".format(user)
+        execute_sql(sql)
         with open(sql_logins, 'w') as outfile:
             json.dump(people, outfile)
 
