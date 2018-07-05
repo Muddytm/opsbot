@@ -7,6 +7,7 @@ import opsbot.customlogging as logging
 import json
 import os
 import pyodbc
+import time
 
 from datetime import datetime
 from datetime import timedelta
@@ -174,60 +175,72 @@ def delete_expired_users():
     with open(sql_logins) as data_file:
         people = json.load(data_file)
     people_changed = False
-    for user, dbs in people.items():
-        for db, expiration in list(dbs.items()):
-            delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
-            expired = datetime.now() # - delta
-            user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
-            #print (str(user_expires) + " vs " + str(expired))
-            if user_expires < expired:
-                logging.info('EXPIRATION: User {} expired on database {}. Removing...\n'.format(user, db))
-                if sql_user_exists(user, db):
-                    sql = "DROP USER [{}]".format(user)
-                    execute_sql(sql, db)
-                    print ("SQL: " + sql)
-                    del people[user][db]
-                    people_changed = True
+    done = False
+    while not done:
+        try:
+            for user, dbs in people.items():
+                for db, expiration in list(dbs.items()):
+                    delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
+                    expired = datetime.now() # - delta
+                    user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
+                    #print (str(user_expires) + " vs " + str(expired))
+                    if user_expires < expired:
+                        logging.info('EXPIRATION: User {} expired on database {}. Removing...\n'.format(user, db))
+                        if sql_user_exists(user, db):
+                            sql = "DROP USER [{}]".format(user)
+                            execute_sql(sql, db)
+                            print ("SQL: " + sql)
+                            del people[user][db]
+                            people_changed = True
 
-                    # Deleting user from notified.json
-                    # TODO: make this shorter
-                    with open("data/notified.json") as notified:
-                        notified_users = json.load(notified)
+                            # Deleting user from notified.json
+                            # TODO: make this shorter
+                            with open("data/notified.json") as notified:
+                                notified_users = json.load(notified)
 
-                    if (user in notified_users["hour"]) and (db in notified_users["hour"][user]):
-                        notified_users["hour"][user].remove(db)
+                            if (user in notified_users["hour"]) and (db in notified_users["hour"][user]):
+                                notified_users["hour"][user].remove(db)
 
-                    if (user in notified_users["tenmins"]) and (db in notified_users["tenmins"][user]):
-                        notified_users["tenmins"][user].remove(db)
+                            if (user in notified_users["tenmins"]) and (db in notified_users["tenmins"][user]):
+                                notified_users["tenmins"][user].remove(db)
 
-                    with open("data/notified.json", 'w') as outfile:
-                        json.dump(notified_users, outfile)
+                            with open("data/notified.json", 'w') as outfile:
+                                json.dump(notified_users, outfile)
 
-                    # Adding user to deleted.json
-                    # TODO: make this shorter
-                    with open("data/deleted.json") as deleted:
-                        deleted_users = json.load(deleted)
+                            # Adding user to deleted.json
+                            # TODO: make this shorter
+                            with open("data/deleted.json") as deleted:
+                                deleted_users = json.load(deleted)
 
-                    if user not in deleted_users:
-                        deleted_users[user] = []
+                            if user not in deleted_users:
+                                deleted_users[user] = []
 
-                    deleted_users[user].append(db)
+                            deleted_users[user].append(db)
 
-                    with open("data/deleted.json", 'w') as outfile:
-                        json.dump(deleted_users, outfile)
+                            with open("data/deleted.json", 'w') as outfile:
+                                json.dump(deleted_users, outfile)
 
-                    logging.info("User {} successfully removed from database {}.\n".format(user, db))
-            else:
-                pass
-                #logging.info("Something went wrong and user {} was not successfully removed.\n".format(user))
-                #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
-        if not people[user]:
-            sql = "DROP LOGIN [{}]".format(user)
-            execute_sql(sql)
-            logging.info("User login {} successfully removed.\n".format(user))
-            del people[user]
-            with open(sql_logins, 'w') as outfile:
-                json.dump(people, outfile)
+                            logging.info("User {} successfully removed from database {}.\n".format(user, db))
+                    else:
+                        pass
+                        #logging.info("Something went wrong and user {} was not successfully removed.\n".format(user))
+                        #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
+
+                if not people[user]:
+                    sql = "DROP LOGIN [{}]".format(user)
+                    execute_sql(sql)
+                    logging.info("User login {} successfully removed.\n".format(user))
+                    del people[user]
+                    with open(sql_logins, 'w') as outfile:
+                        json.dump(people, outfile)
+        except RuntimeError:
+            print ("Dictionary changed size during iteration, trying again...")
+            time.sleep(5)
+            with open(sql_logins) as data_file:
+                people = json.load(data_file)
+
+        # We call this done just so we can exit the loop
+        done = True
 
 def notify_users(interval):
     """Notify users that their db access is about to expire.

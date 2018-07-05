@@ -466,13 +466,18 @@ def no_reason(message, db):
     message.reply(Strings['GRANT_EXAMPLE'].format(db))
 
 
-def grant_sql_access(message, db, reason, readonly):
+def grant_sql_access(message, db, reason, readonly, asterisk=False):
     """Grant access for the user to a the specified database."""
     db_list = sql.database_list()
     requested_dbs = []
     for db_name in db_list:
-        if db in db_name:
-            requested_dbs.append(db_name)
+        if asterisk:
+            if db_name.startswith(db[:-1]):
+                requested_dbs.append(db_name)
+        else:
+            if db == db_name:
+                requested_dbs.append(db_name)
+
 
     users = get_users()
     requester = message._get_user_id()
@@ -527,13 +532,18 @@ def grant_sql_access(message, db, reason, readonly):
 @listen_to('^grant (\S*) (.*)')
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    grant_sql_access(message, db, reason, True)
-
+    if db.endswith("*"):
+        grant_sql_access(message, db, reason, True, True)
+    else:
+        grant_sql_access(message, db, reason, True)
 
 @listen_to('^grantrw (\S*) (.*)')
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    grant_sql_access(message, db, reason, False)
+    if db.endswith("*"):
+        grant_sql_access(message, db, reason, False, True)
+    else:
+        grant_sql_access(message, db, reason, False)
 
 
 @respond_to("logs")
