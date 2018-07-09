@@ -29,3 +29,4 @@ EXPIRE: ":closed_lock_with_key: Your granted access time has expired for the fol
 DANGER: ":skull: Bit dangerous, don't you think? Please type at least 4 characters before/after the asterisk symbol (*)."
 YOUR_LOGS: ":notebook_with_decorative_cover: Here are your requested logs!"
 NO_LOGS_AVAILABLE: ":thinking_face: I can't find any logs that fit that description."
+POOP: ":poop: Now you're just messing with me."

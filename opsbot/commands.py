@@ -469,13 +469,20 @@ def no_reason(message, db):
     message.reply(Strings['GRANT_EXAMPLE'].format(db))
 
 
-def grant_sql_access(message, db, reason, readonly, asterisk=False):
+def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=False):
     """Grant access for the user to a the specified database."""
     db_list = sql.database_list()
     requested_dbs = []
     for db_name in db_list:
-        if asterisk:
-            if db_name.startswith(db) or db_name.endswith(db):
+        if ast_left:
+            if ast_right:
+                if db in db_name:
+                    requested_dbs.append(db_name)
+            else:
+                if db_name.endswith(db):
+                    requested_dbs.append(db_name)
+        elif ast_right:
+            if db_name.startswith(db):
                 requested_dbs.append(db_name)
         else:
             if db == db_name:
@@ -535,32 +542,40 @@ def grant_sql_access(message, db, reason, readonly, asterisk=False):
 @listen_to('^grant (\S*) (.*)')
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    if db == "*":
+    if ((db.endswith("*") and len(db[:-1]) < 4) or
+       (db.startswith("*") and len(db[1:]) < 4) or
+       (db == "*")):
         message.reply(Strings["DANGER"])
-    elif db.endswith("*") and len(db[:-1]) < 4:
-        message.reply(Strings["DANGER"])
-    elif db.startswith("*") and len(db[1:]) < 4:
-        message.reply(Strings["DANGER"])
+    elif ((not db.endswith("*")) and (not db.startswith("*")) and
+         ("*" in db)):
+        message.reply(Strings["POOP"])
     elif db.startswith("*"):
+        if db.endswith("*"):
+            grant_sql_access(message, db[1:][:-1], reason, True, True, True)
+            return
         grant_sql_access(message, db[1:], reason, True, True)
     elif db.endswith("*"):
-        grant_sql_access(message, db[:-1], reason, True, True)
+        grant_sql_access(message, db[:-1], reason, True, False, True)
     else:
         grant_sql_access(message, db, reason, True)
 
 @listen_to('^grantrw (\S*) (.*)')
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    if db == "*":
+    if ((db.endswith("*") and len(db[:-1]) < 4) or
+       (db.startswith("*") and len(db[1:]) < 4) or
+       (db == "*")):
         message.reply(Strings["DANGER"])
-    elif db.endswith("*") and len(db[:-1]) < 4:
-        message.reply(Strings["DANGER"])
-    elif db.startswith("*") and len(db[1:]) < 4:
-        message.reply(Strings["DANGER"])
+    elif ((not db.endswith("*")) and (not db.startswith("*")) and
+         ("*" in db)):
+        message.reply(Strings["POOP"])
     elif db.startswith("*"):
+        if db.endswith("*"):
+            grant_sql_access(message, db[1:][:-1], reason, False, True, True)
+            return
         grant_sql_access(message, db[1:], reason, False, True)
     elif db.endswith("*"):
-        grant_sql_access(message, db[:-1], reason, False, True)
+        grant_sql_access(message, db[:-1], reason, False, False, True)
     else:
         grant_sql_access(message, db, reason, False)
 
@@ -597,9 +612,9 @@ def list_logs(message, target):
         final_lines = logs_as_list(filename, target_time)
 
         if final_lines != "":
-            filename = "{}.csv".format(tokens[0], tokens[1])
+            filename = "{}.csv".format(tokens[0])
             with open ("user_logs/{}".format(filename), "w") as f:
-                f.write(final_lines)
+                    f.write(final_lines)
 
             message.channel.upload_file(filename, "user_logs/{}".format(filename),
                                         initial_comment=Strings["YOUR_LOGS"])
@@ -673,10 +688,6 @@ def logs_as_list(filename, target_time, db=None):
     if os.path.exists('{}{}'.format(sql_log_base, filename)):
         with open('{}{}'.format(sql_log_base, filename), 'r') as f:
             log_lines = f.readlines()
-
-    if len(log_lines) == 0:
-        message.reply(Strings["NO_LOGS"])
-        return
 
     final_lines = ""
     for line in log_lines:

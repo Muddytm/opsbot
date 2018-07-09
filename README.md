@@ -1,6 +1,6 @@
 Gonna make this look *fancier* later on, but for now, just gonna write down some stuff to note for data storage:
 
-active_sql.json looks something like this:
+active_sql.json looks like this:
 
 ```json
 {"banjo": "2018-06-14T14:32:00.00"}
@@ -9,19 +9,13 @@ active_sql.json looks something like this:
 databases.json looks like this:
 
 ```json
-{"radicaldb": "db", "cooldb": "db", "tubulardb": "db", "awesomedb": "db"}
+{"radicaldb": {}, "cooldb": {}, "tubulardb": {}, "awesomedb": {}}
 ```
 
 notified.json looks like this:
 
 ```json
-{"caleb.hawkins": ["cooldb", "radicaldb"]}
-```
-
-sql_users.json looks like this:
-
-```json
-{"people": ["banjo", "caleb.hawkins"]}
+{"tenmins": {"carl": []}, "hour": {"carl": []}}
 ```
 
 and users.json looks like this:
