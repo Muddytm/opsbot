@@ -607,7 +607,6 @@ def list_logs(message, target):
                 while target_time <= target_time_end:
                     filename = "{}-{}.csv".format(target_time.strftime("%m"),
                                                   target_time.strftime("%Y"))
-                    print (filename)
                     final_lines += logs_as_list(filename, target_time)
                     target_time = target_time + timedelta(days=1)
 
@@ -615,19 +614,34 @@ def list_logs(message, target):
                     message.reply("```" + final_lines + "```")
                     return
             except:
-                pass
+                filename = "{}-{}.csv".format(target_time.strftime("%m"),
+                                              target_time.strftime("%Y"))
+
+                final_lines = logs_as_list(filename, target_time, tokens[1])
+
+                if final_lines != "":
+                    message.reply("```" + final_lines + "```")
+                    return
         except:
             message.reply(Strings["LOGS_WRONG_FORMAT"])
             return
-
-        final_lines = logs_as_list(filename, target_time, token[1])
-
-        if final_lines != "":
-            message.reply("```" + final_lines + "```")
-            return
     elif len(tokens) == 3:
-        pass
+        try:
+            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
+            target_time_end = datetime.strptime(tokens[1], "%m-%d-%Y")
+            final_lines = ""
+            while target_time <= target_time_end:
+                filename = "{}-{}.csv".format(target_time.strftime("%m"),
+                                              target_time.strftime("%Y"))
+                final_lines += logs_as_list(filename, target_time, tokens[2])
+                target_time = target_time + timedelta(days=1)
 
+            if final_lines != "":
+                message.reply("```" + final_lines + "```")
+                return
+        except:
+            message.reply(Strings["LOGS_WRONG_FORMAT"])
+            return
 
 
 def logs_as_list(filename, target_time, db=None):
@@ -649,7 +663,6 @@ def logs_as_list(filename, target_time, db=None):
             if not db:
                 final_lines += (line + "\n")
             else:
-                print (line[line.find("DB:") + 4:])
                 if line[line.find("DB:") + 4:].startswith(db):
                     final_lines += (line + "\n")
 
