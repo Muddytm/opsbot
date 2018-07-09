@@ -7,6 +7,7 @@ data/active_sql_example.json
 data/sql_users.json
 data/notified.json
 data/deleted.json
+user_logs/*.csv
 log/*.csv
 slackbot_settings.py
 # Byte-compiled / optimized / DLL files

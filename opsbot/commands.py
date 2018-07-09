@@ -299,7 +299,7 @@ def approve_me(message):
                 #message._client.send_message(config.AUTH_CHANNEL, approval_message)
                 message._client.send_message("mcg_prod_auth", approval_message)
             else:
-                message.reply(":x: Your approval level is already: " + int(user["approval_level"]))
+                message.reply(":x: Your approval level is already: " + str(user["approval_level"]))
 
 
 @listen_to('^approve me$', re.IGNORECASE)
@@ -583,6 +583,7 @@ def list_logs(message, target):
     """
 
     tokens = target.split()
+    chan = find_channel(message._client.channels, message._get_user_id())
 
     if len(tokens) == 1:
         try:
@@ -596,7 +597,12 @@ def list_logs(message, target):
         final_lines = logs_as_list(filename, target_time)
 
         if final_lines != "":
-            message.reply("```" + final_lines + "```")
+            filename = "{}.csv".format(tokens[0], tokens[1])
+            with open ("user_logs/{}".format(filename), "w") as f:
+                f.write(final_lines)
+
+            message.channel.upload_file(filename, "user_logs/{}".format(filename),
+                                        initial_comment=Strings["YOUR_LOGS"])
             return
     elif len(tokens) == 2:
         try:
@@ -611,7 +617,12 @@ def list_logs(message, target):
                     target_time = target_time + timedelta(days=1)
 
                 if final_lines != "":
-                    message.reply("```" + final_lines + "```")
+                    filename = "{}_to_{}.csv".format(tokens[0], tokens[1])
+                    with open ("user_logs/{}".format(filename), "w") as f:
+                        f.write(final_lines)
+
+                    message.channel.upload_file(filename, "user_logs/{}".format(filename),
+                                                initial_comment=Strings["YOUR_LOGS"])
                     return
             except:
                 filename = "{}-{}.csv".format(target_time.strftime("%m"),
@@ -620,7 +631,12 @@ def list_logs(message, target):
                 final_lines = logs_as_list(filename, target_time, tokens[1])
 
                 if final_lines != "":
-                    message.reply("```" + final_lines + "```")
+                    filename = "{}_for_{}.csv".format(tokens[0], tokens[1])
+                    with open ("user_logs/{}".format(filename), "w") as f:
+                        f.write(final_lines)
+
+                    message.channel.upload_file(filename, "user_logs/{}".format(filename),
+                                                initial_comment=Strings["YOUR_LOGS"])
                     return
         except:
             message.reply(Strings["LOGS_WRONG_FORMAT"])
@@ -637,11 +653,18 @@ def list_logs(message, target):
                 target_time = target_time + timedelta(days=1)
 
             if final_lines != "":
-                message.reply("```" + final_lines + "```")
+                filename = "{}_to_{}_for_{}.csv".format(tokens[0], tokens[1], tokens[2])
+                with open ("user_logs/{}".format(filename), "w") as f:
+                    f.write(final_lines)
+
+                message.channel.upload_file(filename, "user_logs/{}".format(filename),
+                                            initial_comment=Strings["YOUR_LOGS"])
                 return
         except:
             message.reply(Strings["LOGS_WRONG_FORMAT"])
             return
+
+    message.reply(Strings["NO_LOGS_AVAILABLE"])
 
 
 def logs_as_list(filename, target_time, db=None):

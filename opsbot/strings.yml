@@ -27,3 +27,5 @@ LOGS_HELP_2: "To request logs for a range of days, the format is: ```logs MM-DD-
 LOGS_HELP_3: "To request logs for a specific database on a day or in a range of days, type ```logs MM-DD-YYYY DBNAME``` or ```logs MM-DD-YYYY MM-DD-YYYY DBNAME```"
 EXPIRE: ":closed_lock_with_key: Your granted access time has expired for the following database(s): {}"
 DANGER: ":skull: Bit dangerous, don't you think? Please type at least 4 characters before/after the asterisk symbol (*)."
+YOUR_LOGS: ":notebook_with_decorative_cover: Here are your requested logs!"
+NO_LOGS_AVAILABLE: ":thinking_face: I can't find any logs that fit that description."
