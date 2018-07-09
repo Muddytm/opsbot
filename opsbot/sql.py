@@ -73,8 +73,8 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     # CREATE USER qwerty FROM LOGIN qwerty
 
     active_logins = {}
-
     created_login = False
+
     if os.path.isfile(sql_logins):
         with open(sql_logins) as data_file:
             active_logins = json.load(data_file)
@@ -106,12 +106,11 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     rights = 'readonly'
     if not readonly:
         rights = 'readwrite'
-    log = 'GRANTING ACCESS: {}: {}, {}, {}\n'.format(user,
-                                                     database,
-                                                     rights,
-                                                     reason)
+    log = 'GRANTING ACCESS for {}. Rights: {}. Reason: \"{}\"\n'.format(user,
+                                                                        rights,
+                                                                        reason)
     #print (log)
-    logging.info(log)
+    logging.info(log, database)
     return created_login
 
 
@@ -130,19 +129,6 @@ def sql_user_exists(user, database=None):
     if (count > 0):
        return True
     return False
-    # with open(sql_logins) as sql_users:
-    #     users = json.load(sql_users)
-    #
-    # if database:
-    #     if (user in users) and (database in users[user]):
-    #         return True
-    #     else:
-    #         return False
-    # else:
-    #     if user in users:
-    #         return True
-    #     else:
-    #         return False
 
 
 def database_list():
@@ -155,17 +141,14 @@ def database_list():
 def build_database_list():
     """Get a list of databases and save them to file."""
     dbs = execute_sql('SELECT * FROM sys.databases', '', True)
-    people = execute_sql('SELECT * FROM sys.database_principals', '', True)
-    #for person in people:
-    #    print (person)
+    #people = execute_sql('SELECT * FROM sys.database_principals', '', True)
     db_list = {}
-    #db_list = {"cooldb": "db", "awesomedb": "db", "radicaldb": "db", "tubulardb": "db"}
     #svr = config.AZURE_SQL_SERVERS[0]
     for db in dbs:
         if db[0] == 'master':
             continue
         db_list[db[0]] = {}
-    #logging.debug('Databases found: {}'.format(len(db_list)))
+
     with open(db_path, 'w') as outfile:
         json.dump(db_list, outfile)
 
@@ -183,9 +166,8 @@ def delete_expired_users():
                     delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
                     expired = datetime.now() # - delta
                     user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
-                    #print (str(user_expires) + " vs " + str(expired))
                     if user_expires < expired:
-                        logging.info('EXPIRATION: User {} expired on database {}. Removing...\n'.format(user, db))
+                        logging.info('EXPIRATION: User {} expired. Removing...\n'.format(user), db)
                         if sql_user_exists(user, db):
                             sql = "DROP USER [{}]".format(user)
                             execute_sql(sql, db)
@@ -220,11 +202,9 @@ def delete_expired_users():
                             with open("data/deleted.json", 'w') as outfile:
                                 json.dump(deleted_users, outfile)
 
-                            logging.info("User {} successfully removed from database {}.\n".format(user, db))
+                            logging.info("User {} successfully removed from database.\n".format(user), db)
                     else:
                         pass
-                        #logging.info("Something went wrong and user {} was not successfully removed.\n".format(user))
-                        #logging.info('User: {}, on database: {}, expires: {}\n'.format(user, db, people[user][db]))
 
                 if not people[user]:
                     sql = "DROP LOGIN [{}]".format(user)

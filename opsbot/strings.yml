@@ -13,7 +13,7 @@ DATABASE_SERVER: ':grey_exclamation: The database `{}` is on the server `<{}>`'
 DATABASE_UNKNOWN: ":x: This database ({}) doesn't seem to exist. Is it spelled correctly?"
 GRANT_EXAMPLE: ':x: You must supply a reason for access, like: ```grant {} salesforce ticket 123456```'
 GRANTED_ACCESS: ":unlock: Granting access for database '{}' until {}. Password sent via direct message."
-EXTENDED_ACCESS: ":unlock: Extended access for database '{}' until {}. Password is unchanged."
+EXTENDED_ACCESS: ":hourglass_flowing_sand: Extended access for database '{}' until {}. Password is unchanged."
 PASSWORD_CREATED: ":old_key: Password to access '{}': ```{}```"
 PASSWORD_REUSED: ":grey_exclamation: To access '{}', your password is the same as your previous grant request."
 SLACK_ID: ":grey_exclamation: Reminder: use your Slack id ({}) as your username."
@@ -22,5 +22,8 @@ NOTIFY_EXPIRE_HOUR: ":exclamation: You have one hour left before your access exp
 NOTIFY_EXPIRE_TENMINS: ":exclamation: You have ten minutes left before your access expires for the following database(s): {}"
 LOGS_WRONG_FORMAT: ":x: Wrong format; the format is MM-DD-YYYY. Example: ```logs 09-21-2017```"
 NO_LOGS: ":exclamation: There are no logs available for the specified period of time."
-LOGS_HELP: ":grey_exclamation: To request logs for a specific day, type ```logs MM-DD-YYYY``` with the appropriate month, day, and year."
+LOGS_HELP_1: ":grey_exclamation: To request logs for a specific day, type ```logs MM-DD-YYYY``` with the appropriate month, day, and year."
+LOGS_HELP_2: "To request logs for a range of days, the format is: ```logs MM-DD-YYYY MM-DD-YYYY```"
+LOGS_HELP_3: "To request logs for a specific database on a day or in a range of days, type ```logs MM-DD-YYYY DBNAME``` or ```logs MM-DD-YYYY MM-DD-YYYY DBNAME```"
 EXPIRE: ":closed_lock_with_key: Your granted access time has expired for the following database(s): {}"
+DANGER: ":skull: Bit dangerous, don't you think? Please type at least 4 characters before/after the asterisk symbol (*)."

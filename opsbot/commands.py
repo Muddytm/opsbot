@@ -80,11 +80,13 @@ def notify(message):
                         if flag is "hour":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])))
-                            logging.info("NOTIFICATION: {} has been notified of DB access ending in an hour.\n".format(user["name"]))
+                            for db in info[person]:
+                                logging.info("NOTIFICATION: {} has been notified of DB access ending in an hour.\n".format(user["name"]), db)
                         elif flag is "tenmins":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])))
-                            logging.info("NOTIFICATION: {} has been notified of DB access ending in 10 minutes.\n".format(user["name"]))
+                            for db in info[person]:
+                                logging.info("NOTIFICATION: {} has been notified of DB access ending in 10 minutes.\n".format(user["name"]), db)
         elif flag is "deleted":
             with open("data/deleted.json") as deleted:
                 deleted_users = json.load(deleted)
@@ -98,7 +100,8 @@ def notify(message):
                         chan = find_channel(message._client.channels, user["id"])
                         message._client.send_message(chan,
                                                      Strings['EXPIRE'].format(", ".join(dbs)))
-                        logging.info("NOTIFICATION: {} has been notified of DB access expiring.\n".format(user["name"]))
+                        for db in dbs:
+                            logging.info("NOTIFICATION: {} has been notified of DB access expiring.\n".format(user["name"]), db)
                         deleted_users[person] = []
                         with open("data/deleted.json", 'w') as outfile:
                             json.dump(deleted_users, outfile)
@@ -472,7 +475,7 @@ def grant_sql_access(message, db, reason, readonly, asterisk=False):
     requested_dbs = []
     for db_name in db_list:
         if asterisk:
-            if db_name.startswith(db[:-1]):
+            if db_name.startswith(db) or db_name.endswith(db):
                 requested_dbs.append(db_name)
         else:
             if db == db_name:
@@ -532,37 +535,103 @@ def grant_sql_access(message, db, reason, readonly, asterisk=False):
 @listen_to('^grant (\S*) (.*)')
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    if db.endswith("*"):
-        grant_sql_access(message, db, reason, True, True)
+    if db == "*":
+        message.reply(Strings["DANGER"])
+    elif db.endswith("*") and len(db[:-1]) < 4:
+        message.reply(Strings["DANGER"])
+    elif db.startswith("*") and len(db[1:]) < 4:
+        message.reply(Strings["DANGER"])
+    elif db.startswith("*"):
+        grant_sql_access(message, db[1:], reason, True, True)
+    elif db.endswith("*"):
+        grant_sql_access(message, db[:-1], reason, True, True)
     else:
         grant_sql_access(message, db, reason, True)
 
 @listen_to('^grantrw (\S*) (.*)')
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    if db.endswith("*"):
-        grant_sql_access(message, db, reason, False, True)
+    if db == "*":
+        message.reply(Strings["DANGER"])
+    elif db.endswith("*") and len(db[:-1]) < 4:
+        message.reply(Strings["DANGER"])
+    elif db.startswith("*") and len(db[1:]) < 4:
+        message.reply(Strings["DANGER"])
+    elif db.startswith("*"):
+        grant_sql_access(message, db[1:], reason, False, True)
+    elif db.endswith("*"):
+        grant_sql_access(message, db[:-1], reason, False, True)
     else:
         grant_sql_access(message, db, reason, False)
 
 
-@respond_to("logs")
+@respond_to("^logs$")
 def logs_help(message):
     """Return brief information on logs."""
-    message.reply(Strings["LOGS_HELP"])
+    message.reply("{}\n{}\n{}".format(Strings["LOGS_HELP_1"],
+                                      Strings["LOGS_HELP_2"],
+                                      Strings["LOGS_HELP_3"]))
 
 
-@respond_to("logs (.*)")
+@respond_to("^logs (.*)")
 def list_logs(message, target):
-    """Return logs from a specified day."""
-    try:
-        target_time = time.strptime(target, "%m-%d-%Y")
-        filename = "{}-{}.csv".format(target[:2], target[6:])
-        #print (filename)
-    except:
-        message.reply(Strings["LOGS_WRONG_FORMAT"])
-        return
+    """Do one of the following:
+    - Post logs for a specified day
+    - Post logs for a specified day for a specified database
+    - Post logs for a specified range of days
+    - post logs for a specified range of days for a specific database
+    """
 
+    tokens = target.split()
+
+    if len(tokens) == 1:
+        try:
+            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
+            filename = "{}-{}.csv".format(target_time.strftime("%m"),
+                                          target_time.strftime("%Y"))
+        except:
+            message.reply(Strings["LOGS_WRONG_FORMAT"])
+            return
+
+        final_lines = logs_as_list(filename, target_time)
+
+        if final_lines != "":
+            message.reply("```" + final_lines + "```")
+            return
+    elif len(tokens) == 2:
+        try:
+            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
+            try:
+                target_time_end = datetime.strptime(tokens[1], "%m-%d-%Y")
+                final_lines = ""
+                while target_time <= target_time_end:
+                    filename = "{}-{}.csv".format(target_time.strftime("%m"),
+                                                  target_time.strftime("%Y"))
+                    print (filename)
+                    final_lines += logs_as_list(filename, target_time)
+                    target_time = target_time + timedelta(days=1)
+
+                if final_lines != "":
+                    message.reply("```" + final_lines + "```")
+                    return
+            except:
+                pass
+        except:
+            message.reply(Strings["LOGS_WRONG_FORMAT"])
+            return
+
+        final_lines = logs_as_list(filename, target_time, token[1])
+
+        if final_lines != "":
+            message.reply("```" + final_lines + "```")
+            return
+    elif len(tokens) == 3:
+        pass
+
+
+
+def logs_as_list(filename, target_time, db=None):
+    """Return logs in a file as a list, according to filename."""
     log_lines = []
     if os.path.exists('{}{}'.format(sql_log_base, filename)):
         with open('{}{}'.format(sql_log_base, filename), 'r') as f:
@@ -576,10 +645,12 @@ def list_logs(message, target):
     for line in log_lines:
         timestamp = line.split(" ")[0]
         timestamp = timestamp[5:] + "-" + timestamp[:4]
-        if (time.strptime(timestamp, "%m-%d-%Y") == target_time):
-            final_lines += (line + "\n")
-        #print (timestamp)
+        if (datetime.strptime(timestamp, "%m-%d-%Y") == target_time):
+            if not db:
+                final_lines += (line + "\n")
+            else:
+                print (line[line.find("DB:") + 4:])
+                if line[line.find("DB:") + 4:].startswith(db):
+                    final_lines += (line + "\n")
 
-    if final_lines != "":
-        message.reply("```" + final_lines + "```")
-        return
+    return final_lines
