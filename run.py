@@ -33,6 +33,10 @@ def main():
     db_list_task.thread_work_timer = config.CHECK_DATABASE_INTERVAL
     task_threads.append(db_list_task)
 
+    # server_list_task = opsbot.tasks.ServerList()
+    # server_list_task.thread_work_timer = config.CHECK_SERVER_INTERVAL
+    # task_threads.append(server_list_task)
+
     delete_user_task = opsbot.tasks.DeleteUser()
     task_threads.append(delete_user_task)
 

@@ -10,8 +10,8 @@ sql_log_base = config.LOG_PATH
 def info(message, database=None):
     """Logs the message at this time and writes it to the correct log."""
     if database:
-        message = ("DB: " + database + " - " + message)
-    message = (str(datetime.today()) + " - " + message)
+        message = (database + ", " + message)
+    message = (str(datetime.today()) + ", " + message)
     filename = datetime.today().strftime("%m-%Y.csv")
     if os.path.exists('{}{}'.format(sql_log_base, filename)):
         fd = open('{}{}'.format(sql_log_base, filename), 'a')

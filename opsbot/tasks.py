@@ -99,3 +99,12 @@ class DBList(TaskThread):
         """Get a list of sql databases."""
         logging.debug('Updating database list.')
         sql.build_database_list()
+
+
+# class ServerList(TaskThread):
+#     """Maintain the list of servers."""
+#
+#     def thread_worker(self):
+#         """Get a list of sql servers."""
+#         logging.debug('Updating server list.')
+#         sql.build_server_list()

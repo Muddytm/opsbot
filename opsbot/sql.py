@@ -106,9 +106,9 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     rights = 'readonly'
     if not readonly:
         rights = 'readwrite'
-    log = 'GRANTING ACCESS for {}. Rights: {}. Reason: \"{}\"\n'.format(user,
-                                                                        rights,
-                                                                        reason)
+    log = '{}, \"{}\", {}\n'.format(user,
+                                    reason,
+                                    rights)
     #print (log)
     logging.info(log, database)
     return created_login
@@ -153,6 +153,21 @@ def build_database_list():
         json.dump(db_list, outfile)
 
 
+# def build_server_list():
+#     """Get a list of servers and save them to file."""
+#     dbs = execute_sql('SELECT * FROM sys.databases', '', True)
+#     #people = execute_sql('SELECT * FROM sys.database_principals', '', True)
+#     db_list = {}
+#     #svr = config.AZURE_SQL_SERVERS[0]
+#     for db in dbs:
+#         if db[0] == 'master':
+#             continue
+#         db_list[db[0]] = {}
+#
+#     with open(db_path, 'w') as outfile:
+#         json.dump(db_list, outfile)
+
+
 def delete_expired_users():
     """Find any expired users and remove them."""
     with open(sql_logins) as data_file:
@@ -167,55 +182,57 @@ def delete_expired_users():
                     expired = datetime.now() # - delta
                     user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
                     if user_expires < expired:
-                        logging.info('EXPIRATION: User {} expired. Removing...\n'.format(user), db)
-                        if sql_user_exists(user, db):
-                            sql = "DROP USER [{}]".format(user)
-                            execute_sql(sql, db)
-                            print ("SQL: " + sql)
-                            del people[user][db]
-                            people_changed = True
+                        #logging.info('{}, SYSTEM: REMOVING USER\n'.format(user), db)
+                        #if sql_user_exists(user, db):
+                        del people[user][db]
+                        people_changed = True
 
-                            # Deleting user from notified.json
-                            # TODO: make this shorter
-                            with open("data/notified.json") as notified:
-                                notified_users = json.load(notified)
+                        # Deleting user from notified.json
+                        # TODO: make this shorter
+                        with open("data/notified.json") as notified:
+                            notified_users = json.load(notified)
 
-                            if (user in notified_users["hour"]) and (db in notified_users["hour"][user]):
-                                notified_users["hour"][user].remove(db)
+                        if (user in notified_users["hour"]) and (db in notified_users["hour"][user]):
+                            notified_users["hour"][user].remove(db)
 
-                            if (user in notified_users["tenmins"]) and (db in notified_users["tenmins"][user]):
-                                notified_users["tenmins"][user].remove(db)
+                        if (user in notified_users["tenmins"]) and (db in notified_users["tenmins"][user]):
+                            notified_users["tenmins"][user].remove(db)
 
-                            with open("data/notified.json", 'w') as outfile:
-                                json.dump(notified_users, outfile)
+                        with open("data/notified.json", 'w') as outfile:
+                            json.dump(notified_users, outfile)
 
-                            # Adding user to deleted.json
-                            # TODO: make this shorter
-                            with open("data/deleted.json") as deleted:
-                                deleted_users = json.load(deleted)
+                        # Adding user to deleted.json
+                        # TODO: make this shorter
+                        with open("data/deleted.json") as deleted:
+                            deleted_users = json.load(deleted)
 
-                            if user not in deleted_users:
-                                deleted_users[user] = []
+                        if user not in deleted_users:
+                            deleted_users[user] = []
 
-                            deleted_users[user].append(db)
+                        deleted_users[user].append(db)
 
-                            with open("data/deleted.json", 'w') as outfile:
-                                json.dump(deleted_users, outfile)
+                        with open("data/deleted.json", 'w') as outfile:
+                            json.dump(deleted_users, outfile)
 
-                            logging.info("User {} successfully removed from database.\n".format(user), db)
+                        delete_sql_user(user, db)
+                        #sql = "DROP USER [{}]".format(user)
+                        #execute_sql(sql, db)
+                        #print ("SQL: " + sql)
+
+                        logging.info("{}, [USER REMOVED SUCCESSFULLY]\n".format(user), db)
                     else:
                         pass
 
                 if not people[user]:
                     sql = "DROP LOGIN [{}]".format(user)
                     execute_sql(sql)
-                    logging.info("User login {} successfully removed.\n".format(user))
+                    logging.info("{}, [LOGIN REMOVED SUCCESSFULLY]\n".format(user), "[SERVER]")
                     del people[user]
                     with open(sql_logins, 'w') as outfile:
                         json.dump(people, outfile)
         except RuntimeError:
             print ("Dictionary changed size during iteration, trying again...")
-            time.sleep(5)
+            time.sleep(1)
             with open(sql_logins) as data_file:
                 people = json.load(data_file)
 

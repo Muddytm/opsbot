@@ -48,7 +48,7 @@ def load_slack_users(message):
         json.dump(user_list, outfile)
 
     message.reply("Successfully loaded users into json file.")
-    logging.info("Loaded users into users.json.\n")
+    #logging.info("Loaded users into users.json.\n")
 
 
 @respond_to("start")
@@ -79,21 +79,23 @@ def notify(message):
                         chan = find_channel(message._client.channels, user["id"])
                         if flag is "hour":
                             message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])))
+                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])) + "\n"
+                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
                             for db in info[person]:
-                                logging.info("NOTIFICATION: {} has been notified of DB access ending in an hour.\n".format(user["name"]), db)
+                                logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), db)
                         elif flag is "tenmins":
                             message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])))
+                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])) + "\n"
+                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
                             for db in info[person]:
-                                logging.info("NOTIFICATION: {} has been notified of DB access ending in 10 minutes.\n".format(user["name"]), db)
+                                logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), db)
         elif flag is "deleted":
             with open("data/deleted.json") as deleted:
                 deleted_users = json.load(deleted)
 
             for person, dbs in deleted_users.items():
                 if not dbs: # If db list is empty
-                    break
+                    continue
                 users = get_users()
                 for user in users:
                     if person == user["name"]:
@@ -101,7 +103,7 @@ def notify(message):
                         message._client.send_message(chan,
                                                      Strings['EXPIRE'].format(", ".join(dbs)))
                         for db in dbs:
-                            logging.info("NOTIFICATION: {} has been notified of DB access expiring.\n".format(user["name"]), db)
+                            logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), db)
                         deleted_users[person] = []
                         with open("data/deleted.json", 'w') as outfile:
                             json.dump(deleted_users, outfile)
@@ -334,7 +336,7 @@ def approve_person(message, target):
                 if admin["id"] == approver:
                     if user is not None:
                         if user["approval_level"] == 0:
-                            message.reply("Approving user: '{}'".format(target))
+                            message.reply("Approving user: <@{}>".format(target))
                             user["approval_level"] = 10
                             save_users(users)
                         elif user["approval_level"] == -10:
@@ -530,7 +532,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         else:
             pass_reused = Strings['PASSWORD_REUSED'].format(db)
             message._client.send_message(chan, pass_reused)
-        slack_id_msg = Strings['SLACK_ID'].format(name)
+        slack_id_msg = Strings['SLACK_ID'].format(expiration, name)
         message._client.send_message(chan, slack_id_msg)
         return
     if level == -10:
@@ -691,13 +693,14 @@ def logs_as_list(filename, target_time, db=None):
 
     final_lines = ""
     for line in log_lines:
-        timestamp = line.split(" ")[0]
+        tokens = line.split(",")
+        timestamp = tokens[0].split()[0]
         timestamp = timestamp[5:] + "-" + timestamp[:4]
         if (datetime.strptime(timestamp, "%m-%d-%Y") == target_time):
             if not db:
                 final_lines += (line + "\n")
             else:
-                if line[line.find("DB:") + 4:].startswith(db):
+                if db in tokens[1].strip():
                     final_lines += (line + "\n")
 
     return final_lines
