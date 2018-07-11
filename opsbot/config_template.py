@@ -34,10 +34,10 @@ AZURE_DSN = os.getenv('AZURE_SQL_DSN')
 AZURE_SQL_SERVERS = os.getenv('AZURE_SQL_SERVERS', '').split(',')
 
 # Slack channel to listen to and do group replies in:
-AUTH_CHANNEL = "bottesting" #os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL = "mcg_prod_auth" #os.getenv('AUTH_SLACK_CHANNEL')
 
 # URL of a help document:
-HELP_URL = os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
+HELP_URL = "https://isitchristmas.com/" #os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
 
 # Logging level. (10 = DEBUG, 20 = INFO, 30 = WARNING)
 LOGGING_LEVEL = int(os.getenv('AUTH_LOGGING_LEVEL', 30))
@@ -85,6 +85,9 @@ PASSWORD_SYMBOLS = "@$%^&(){}<>-+="
 
 # How often (in seconds) to get a new list of databases:
 CHECK_DATABASE_INTERVAL = 3600
+
+# How often (in seconds) to get a new list of servers:
+CHECK_SERVER_INTERVAL = 3600
 
 # How often a given thread should check for work and/or stop signals, in sec.
 # Smaller numbers = more checks, but faster timing to things like quit signals.

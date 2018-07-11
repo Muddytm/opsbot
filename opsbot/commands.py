@@ -17,6 +17,7 @@ import opsbot.config as config
 #from opsbot.people import People
 import opsbot.sql as sql
 from opsbot.strings import Strings
+from opsbot.user_queries import query_users
 
 user_path = config.DATA_PATH + 'users.json'
 sql_log_base = config.LOG_PATH
@@ -108,7 +109,7 @@ def notify(message):
                         with open("data/deleted.json", 'w') as outfile:
                             json.dump(deleted_users, outfile)
 
-        time.sleep(10)
+        time.sleep(5)
 
 
 def get_users():
@@ -704,3 +705,26 @@ def logs_as_list(filename, target_time, db=None):
                     final_lines += (line + "\n")
 
     return final_lines
+
+@respond_to("^approved$")
+def approved(message):
+    """Returns list of approved users."""
+    query_users(message, get_users(), 10)
+
+
+@respond_to("^unapproved$")
+def unapproved(message):
+    """Returns list of unapproved users."""
+    query_users(message, get_users(), 0)
+
+
+@respond_to("^admins$")
+def admins(message):
+    """Returns list of admins."""
+    query_users(message, get_users(), 50)
+
+
+@respond_to("^denied$")
+def denied(message):
+    """Returns list of denied users."""
+    query_users(message, get_users(), -10)
