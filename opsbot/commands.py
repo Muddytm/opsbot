@@ -21,9 +21,12 @@ user_path = config.DATA_PATH + 'users.json'
 sql_log_base = config.LOG_PATH
 
 
-@respond_to("load")
+#@respond_to("load")
 def load_slack_users(message):
-    """Put Slack users into JSON and dump into users.json."""
+    """Put Slack users into JSON and dump into users.json.
+
+    NOTE: USING THIS WILL RESET user.json. Uncomment the @respond_to bit
+    if you really want to use this."""
     user_list = []
     for userid, user in iteritems(message._client.users):
         user_info = {}
@@ -38,13 +41,21 @@ def load_slack_users(message):
         json.dump(user_list, outfile)
 
     message.reply("Successfully loaded users into json file.")
-    #logging.info("Loaded users into users.json.\n")
 
 
 @respond_to("start")
 def notify(message):
     """Start a minute-by-minute check of user expiration times and notify
-       users when their time is almost up."""
+       users when their time is almost up.
+
+    Basic flow: iterate through each process every 5 seconds. Processes are:
+
+    Hour = notify the user one hour before their access is to expire
+    Tenmins = notify the user ten minutes before their access is to expire
+    Deleted = notify the user when their access has expired
+
+    Each one works by looking at notified.json or deleted.json - if the database
+    is not listed for the user in question"""
     # TODO: clean up this ugly mess
     message.reply(":gear: Started expiration checking process; users will now "
                   "be notified if their access is about to expire.")
@@ -101,9 +112,11 @@ def notify(message):
         time.sleep(5)
 
 
-@respond_to('^upgrade (.*) (.*)')
+#@respond_to('^upgrade (.*) (.*)')
 def upgrade(message, target, num):
-    """Upgrade a user to the specified approval level."""
+    """Upgrade a user to the specified approval level.
+
+    Commented out for now since this can be abused, usage should be limited."""
     users = hf.get_users()
 
     for user in users:
@@ -121,24 +134,24 @@ def upgrade(message, target, num):
                   "{}.".format(target, num))
 
 
-@respond_to('channels')
+#@respond_to('^channels$')
 def channels(message):
     """Display summary of channels in Slack.
 
-    TODO: fix this :)
+    TODO: I have no idea why this doesn't work, so fix this :)
     """
     for channel in message._client.channels:
         if 'is_member' in channel:
-            message.reply("{} ({})".format(chan['name'], chan['id']))
+            message.reply("{} ({})".format(channel['name'], channel['id']))
         elif 'is_im' in channel:
-            print(chan)
-            friendlyname = chan['user']
+            print(channel)
+            friendlyname = channel['user']
             try:
-                friendlyname = chan['user']["name"]
+                friendlyname = channel['user']["name"]
             except (KeyError, AttributeError):
                 pass
             message.reply("User channel: {} ({})".format(friendlyname,
-                                                         chan['id']))
+                                                         channel['id']))
 
 
 @respond_to('password$')
@@ -206,10 +219,7 @@ def approve_me_group(message):
 
 @listen_to('^approve (\S*)$')
 def approve_person(message, target):
-    """Approve a user, if the author of the msg is an admin.
-
-    TODO: get this working
-    """
+    """Approve a user, if the author of the msg is an admin."""
     users = hf.get_users()
     if target == 'me':
         return
@@ -233,57 +243,6 @@ def approve_person(message, target):
                         message.reply(Strings['USER_NOT_FOUND'].format(target))
                 else:
                     message.reply(Strings['CANT_APPROVE'])
-
-
-@respond_to('^admins$')
-def admin_list(message):
-    """Display a list of all admins."""
-    admins = hf.get_admins()
-    names = []
-    for admin in admins:
-        names.append(admin["name"])
-
-    message.reply('My admins are: {}'.format(", ".join(names)))
-
-
-@respond_to('^approved$')
-def approved_list(message):
-    """Display a list of all approved users."""
-    users = hf.get_users()
-    names = []
-    for user in users:
-        if user["approval_level"] == 10: # "Approved" level
-            names.append(user["name"])
-
-    message.reply('Approved users are: {}'.format(", ".join(names)))
-
-
-@respond_to('^denied$')
-def denied_list(message):
-    """Display a list of denied users."""
-    users = hf.get_users()
-    names = []
-    for user in users:
-        if user["approval_level"] == -10: # "Denied" level
-            names.append(user["name"])
-
-    message.reply('Denied users are: {}'.format(", ".join(names)))
-
-
-@respond_to('^unknown$')
-def unknown_list(message):
-    """Display a list of users without a known status."""
-    users = hf.get_users()
-    names = []
-    for user in users:
-        if user["approval_level"] == 0: # "Unknown" level
-            names.append(user["name"])
-
-    if (len(names) > 100):
-        message.reply(Strings['TOO_MANY_USERS'].format(len(names)))
-        return
-
-    message.reply('Unknown users are: {}'.format(", ".join(names)))
 
 
 @respond_to('^me$')
@@ -359,42 +318,12 @@ def no_reason(message, db):
 @listen_to('^grant (\S*) (.*)')
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    if ((db.endswith("*") and len(db[:-1]) < 4) or
-       (db.startswith("*") and len(db[1:]) < 4) or
-       (db == "*")):
-        message.reply(Strings["DANGER"])
-    elif ((not db.endswith("*")) and (not db.startswith("*")) and
-         ("*" in db)):
-        message.reply(Strings["POOP"])
-    elif db.startswith("*"):
-        if db.endswith("*"):
-            hf.grant_sql_access(message, db[1:][:-1], reason, True, True, True)
-            return
-        hf.grant_sql_access(message, db[1:], reason, True, True)
-    elif db.endswith("*"):
-        hf.grant_sql_access(message, db[:-1], reason, True, False, True)
-    else:
-        hf.grant_sql_access(message, db, reason, True)
+    hf.grant(message, db, reason, True)
 
 @listen_to('^grantrw (\S*) (.*)')
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    if ((db.endswith("*") and len(db[:-1]) < 4) or
-       (db.startswith("*") and len(db[1:]) < 4) or
-       (db == "*")):
-        message.reply(Strings["DANGER"])
-    elif ((not db.endswith("*")) and (not db.startswith("*")) and
-         ("*" in db)):
-        message.reply(Strings["POOP"])
-    elif db.startswith("*"):
-        if db.endswith("*"):
-            hf.grant_sql_access(message, db[1:][:-1], reason, False, True, True)
-            return
-        hf.grant_sql_access(message, db[1:], reason, False, True)
-    elif db.endswith("*"):
-        hf.grant_sql_access(message, db[:-1], reason, False, False, True)
-    else:
-        hf.grant_sql_access(message, db, reason, False)
+    hf.grant(message, db, reason, False)
 
 
 @respond_to("^logs$")
@@ -417,6 +346,7 @@ def list_logs(message, target):
     tokens = target.split()
     chan = hf.find_channel(message._client.channels, message._get_user_id())
 
+    # Get the logs for the specified day
     if len(tokens) == 1:
         try:
             target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
@@ -436,6 +366,8 @@ def list_logs(message, target):
             message.channel.upload_file(filename, "user_logs/{}".format(filename),
                                         initial_comment=Strings["YOUR_LOGS"])
             return
+    # Get the logs for the specified day and the specified database
+    # OR get the logs for the specified date range
     elif len(tokens) == 2:
         try:
             target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
@@ -473,6 +405,7 @@ def list_logs(message, target):
         except:
             message.reply(Strings["LOGS_WRONG_FORMAT"])
             return
+    # Get the logs for the specified date range and the specified database
     elif len(tokens) == 3:
         try:
             target_time = datetime.strptime(tokens[0], "%m-%d-%Y")

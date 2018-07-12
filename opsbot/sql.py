@@ -97,15 +97,17 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     with open(sql_logins, 'w') as outfile:
         json.dump(active_logins, outfile)
 
-    role = 'db_datareader'
     if not readonly:
         role = 'db_datawriter'
+        rights = 'readwrite'
+    else:
+        role = 'db_datareader'
+        rights = 'readonly'
+
     sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
     execute_sql(sql, database)
     print ("SQL: " + sql)
-    rights = 'readonly'
-    if not readonly:
-        rights = 'readwrite'
+
     log = '{}, \"{}\", {}\n'.format(user,
                                     reason,
                                     rights)
@@ -182,8 +184,6 @@ def delete_expired_users():
                     expired = datetime.now() # - delta
                     user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
                     if user_expires < expired:
-                        #logging.info('{}, SYSTEM: REMOVING USER\n'.format(user), db)
-                        #if sql_user_exists(user, db):
                         del people[user][db]
                         people_changed = True
 
@@ -215,9 +215,6 @@ def delete_expired_users():
                             json.dump(deleted_users, outfile)
 
                         delete_sql_user(user, db)
-                        #sql = "DROP USER [{}]".format(user)
-                        #execute_sql(sql, db)
-                        #print ("SQL: " + sql)
 
                         logging.info("{}, [USER REMOVED SUCCESSFULLY]\n".format(user), db)
                     else:
@@ -235,12 +232,14 @@ def delete_expired_users():
             time.sleep(1)
             with open(sql_logins) as data_file:
                 people = json.load(data_file)
+            continue
 
         # We call this done just so we can exit the loop
         done = True
 
 def notify_users(interval):
-    """Notify users that their db access is about to expire.
+    """Return a dict of people with databases they can access, that are soon
+    to expire.
 
     Interval (either "hours" or "tenmins") determines what sort of check we're
     performing.
@@ -255,6 +254,8 @@ def notify_users(interval):
 
     for user in people:
         info[user] = []
+        # For each one: if the user/database are not in notified_users, check
+        # if they should be, and then append them to it.
         if interval is "hour":
             if user not in notified_users["hour"]:
                 notified_users["hour"][user] = []

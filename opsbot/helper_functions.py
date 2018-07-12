@@ -152,6 +152,10 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
     """Grant access for the user to a the specified database."""
     db_list = sql.database_list()
     requested_dbs = []
+
+    # This is using ast_left (if there's an asterisk on the left of the db name)
+    # and ast_right (vice versa) to determine which dbs should be added to the
+    # list. If both are False, just look for a db of that exact name.
     for db_name in db_list:
         if ast_left:
             if ast_right:
@@ -167,7 +171,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
             if db == db_name:
                 requested_dbs.append(db_name)
 
-
+    # Get approval level of requester, to see if they're approved.
     users = get_users()
     requester = message._get_user_id()
     for user in users:
@@ -182,7 +186,6 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
 
         password = generate_password()
         chan = find_channel(message._client.channels, message._get_user_id())
-        #offset = int(user_list[requester].details['tz_offset']) # To be revisited later - timezone shenanigans
         expiration = pass_good_until() # + timedelta(seconds=offset)
         created_flag = False
         for db in requested_dbs:
@@ -196,26 +199,53 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
             # can have a message about it.
             if created:
                 created_flag = True
+
+        # We want the expiration time to look nice.
         friendly_exp = friendly_time(expiration)
+
+        # If a sql login/user was created, we want the user to know.
         if created_flag:
             message.reply(Strings['GRANTED_ACCESS'].format(db, friendly_exp))
-        else:
-            message.reply(Strings['EXTENDED_ACCESS'].format(db, friendly_exp))
-        if (len(requested_dbs) > 1):
-            message.reply('{} databases affected.'.format(len(requested_dbs)))
-        if created_flag:
             pass_created = Strings['PASSWORD_CREATED'].format(db, password)
             message._client.send_message(chan, pass_created)
         else:
+            message.reply(Strings['EXTENDED_ACCESS'].format(db, friendly_exp))
             pass_reused = Strings['PASSWORD_REUSED'].format(db)
             message._client.send_message(chan, pass_reused)
+
+        #if (len(requested_dbs) > 1):
+        #    message.reply('{} databases affected.'.format(len(requested_dbs)))
+
         slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
         message._client.send_message(chan, slack_id_msg)
         return
     if level == -10:
         message.reply('Request denied')
         return
+
     message.reply(Strings['NOT_APPROVED_YET'])
+
+
+def grant(message, db, reason, readonly):
+    """Master function for the grant commands.
+
+    Supports wildcards of pretty much any variation."""
+    if ((db.endswith("*") and len(db[:-1]) < 4) or
+       (db.startswith("*") and len(db[1:]) < 4) or
+       (db == "*")):
+        message.reply(Strings["DANGER"])
+    elif ((not db.endswith("*")) and (not db.startswith("*")) and
+         ("*" in db)):
+        message.reply(Strings["POOP"])
+    elif db.startswith("*"):
+        if db.endswith("*"):
+            grant_sql_access(message, db[1:][:-1], reason, readonly, True, True)
+            return
+        grant_sql_access(message, db[1:], reason, readonly, True)
+    elif db.endswith("*"):
+        grant_sql_access(message, db[:-1], reason, readonly, False, True)
+    else:
+        grant_sql_access(message, db, reason, readonly)
 
 
 def logs_as_list(filename, target_time, db=None):
