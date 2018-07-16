@@ -67,6 +67,33 @@ def delete_sql_user(user, database):
     print ("SQL: " + sql)
 
 
+def delete_sql_login(user):
+    """Delete a SQL login."""
+    if not sql_user_exists(user):
+        return
+
+    sql = "DROP LOGIN [{}]".format(user)
+    execute_sql(sql)
+    print ("SQL: " + sql)
+
+
+def sql_user_exists(user, database=None):
+    """Return True if the SQL login already exists for a user.
+
+    This queries the master if no database is selected (so checks for a
+    login) or the specified database (in which case it looks for a
+    database user)
+    """
+    table = 'sys.sql_logins'
+    if database is not None:
+       table = 'sysusers'
+    sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
+    count = execute_sql_count(sql, database)
+    if (count > 0):
+       return True
+    return False
+
+
 def create_sql_login(user, password, database, expire, readonly, reason):
     """Create a SQL login."""
     # create login qwerty with password='qwertyQ12345'
@@ -116,23 +143,6 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     return created_login
 
 
-def sql_user_exists(user, database=None):
-    """Return True if the SQL login already exists for a user.
-
-    This queries the master if no database is selected (so checks for a
-    login) or the specified database (in which case it looks for a
-    database user)
-    """
-    table = 'sys.sql_logins'
-    if database is not None:
-       table = 'sysusers'
-    sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
-    count = execute_sql_count(sql, database)
-    if (count > 0):
-       return True
-    return False
-
-
 def database_list():
     """Return a list of valid databases."""
     with open(db_path) as data_file:
@@ -178,13 +188,15 @@ def delete_expired_users():
     done = False
     while not done:
         try:
+            # For user and list of dbs that user is in
             for user, dbs in people.items():
+                # For db in list of dbs, and expiration time for db
                 for db, expiration in list(dbs.items()):
                     delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
                     expired = datetime.now() # - delta
                     user_expires = datetime.strptime(people[user][db], "%Y-%m-%dT%H:%M:%S.%f")
                     if user_expires < expired:
-                        del people[user][db]
+                        del people[user][db] # Get rid of db record for this user
                         people_changed = True
 
                         # Deleting user from notified.json
@@ -220,9 +232,10 @@ def delete_expired_users():
                     else:
                         pass
 
-                if not people[user]:
-                    sql = "DROP LOGIN [{}]".format(user)
-                    execute_sql(sql)
+                if not people[user]: # If all users have been removed, remove login
+                    delete_sql_login(user)
+                    #sql = "DROP LOGIN [{}]".format(user)
+                    #execute_sql(sql)
                     logging.info("{}, [LOGIN REMOVED SUCCESSFULLY]\n".format(user), "[SERVER]")
                     del people[user]
                     with open(sql_logins, 'w') as outfile:
