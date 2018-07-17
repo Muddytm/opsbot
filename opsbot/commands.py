@@ -336,97 +336,99 @@ def logs_help(message):
 
 @respond_to("^logs (.*)")
 def list_logs(message, target):
-    """Do one of the following:
-    - Post logs for a specified day
-    - Post logs for a specified day for a specified database
-    - Post logs for a specified range of days
-    - post logs for a specified range of days for a specific database
+    """Post logs with parameters available for a single date OR range of dates,
+    specified database, specified user, and/or specified access type.
     """
 
     tokens = target.split()
     chan = hf.find_channel(message._client.channels, message._get_user_id())
 
-    # Get the logs for the specified day
-    if len(tokens) == 1:
-        try:
-            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
-            filename = "{}-{}.csv".format(target_time.strftime("%m"),
-                                          target_time.strftime("%Y"))
-        except:
-            message.reply(Strings["LOGS_WRONG_FORMAT"])
-            return
+    target_time = None
+    time_start = None
+    time_end = None
+    db = None
+    user = None
+    perms = None
 
-        final_lines = hf.logs_as_list(filename, target_time)
+    for token in tokens:
+        if token.lower().startswith("date:"):
+            target_time = token[5:]
+            target_time_origin = target_time
+        elif token.lower().startswith("from:"):
+            time_start = token[5:]
+            time_start_origin = time_start
+        elif token.lower().startswith("to:"):
+            time_end = token[3:]
+            time_end_origin = time_end
+        elif token.lower().startswith("db:"):
+            db = token[3:]
+        elif token.lower().startswith("user:"):
+            user = token[5:]
+        elif token.lower().startswith("perms:"):
+            perms = token[6:]
+
+    # Cannot have a "date" parameter alongside "from"/"to" parameter(s)
+    if target_time and (time_start or time_end):
+        message.reply(Strings["LOGS_TIME_FORMAT_ERROR"])
+        return
+
+    # Cannot have a "from" without a "to" or vice versa
+    if (time_start and (not time_end)) or (time_end and (not time_start)):
+        message.reply(Strings["LOGS_TIME_RANGE_FORMAT_ERROR"])
+        return
+
+    if (not target_time) and (not time_start) and (not time_end):
+        message.reply(Strings["LOGS_NO_TIME_SPECIFIED"])
+        return
+
+    # Check that the dates given are in the correct format (MM-DD-YYYY)
+    try:
+        if target_time:
+            target_time = datetime.strptime(target_time, "%m-%d-%Y")
+        if time_start:
+            time_start = datetime.strptime(time_start, "%m-%d-%Y")
+        if time_end:
+            time_end = datetime.strptime(time_end, "%m-%d-%Y")
+    except:
+        message.reply(Strings["LOGS_WRONG_FORMAT"])
+        return
+
+    filename_suffix = ""
+    if db:
+        filename_suffix += ("_db-{}".format(db.replace("*", "")))
+    if user:
+        filename_suffix += ("_user-{}".format(user.replace("*", "")))
+
+    if target_time and (not time_start) and (not time_end):
+        filename = "{}-{}.csv".format(target_time.strftime("%m"),
+                                      target_time.strftime("%Y"))
+
+        final_lines = hf.logs_as_list(filename, target_time, db, user, perms)
 
         if final_lines != "":
-            filename = "{}.csv".format(tokens[0])
+            filename = "{}{}.csv".format(target_time_origin, filename_suffix)
             with open ("user_logs/{}".format(filename), "w") as f:
                     f.write(final_lines)
 
             message.channel.upload_file(filename, "user_logs/{}".format(filename),
                                         initial_comment=Strings["YOUR_LOGS"])
             return
-    # Get the logs for the specified day and the specified database
-    # OR get the logs for the specified date range
-    elif len(tokens) == 2:
-        try:
-            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
-            try:
-                target_time_end = datetime.strptime(tokens[1], "%m-%d-%Y")
-                final_lines = ""
-                while target_time <= target_time_end:
-                    filename = "{}-{}.csv".format(target_time.strftime("%m"),
-                                                  target_time.strftime("%Y"))
-                    final_lines += hf.logs_as_list(filename, target_time)
-                    target_time = target_time + timedelta(days=1)
 
-                if final_lines != "":
-                    filename = "{}_to_{}.csv".format(tokens[0], tokens[1])
-                    with open ("user_logs/{}".format(filename), "w") as f:
-                        f.write(final_lines)
+    if (time_start and time_end) and not target_time:
+        final_lines = ""
+        while time_start <= time_end:
+            filename = "{}-{}.csv".format(time_start.strftime("%m"),
+                                          time_start.strftime("%Y"))
+            final_lines += hf.logs_as_list(filename, time_start, db, user, perms)
+            time_start = time_start + timedelta(days=1)
 
-                    message.channel.upload_file(filename, "user_logs/{}".format(filename),
-                                                initial_comment=Strings["YOUR_LOGS"])
-                    return
-            except:
-                filename = "{}-{}.csv".format(target_time.strftime("%m"),
-                                              target_time.strftime("%Y"))
+        if final_lines != "":
+            filename = "{}_to_{}{}.csv".format(time_start_origin, time_end_origin, filename_suffix)
+            with open ("user_logs/{}".format(filename), "w") as f:
+                f.write(final_lines)
 
-                final_lines = hf.logs_as_list(filename, target_time, tokens[1])
-
-                if final_lines != "":
-                    filename = "{}_for_{}.csv".format(tokens[0], tokens[1])
-                    with open ("user_logs/{}".format(filename), "w") as f:
-                        f.write(final_lines)
-
-                    message.channel.upload_file(filename, "user_logs/{}".format(filename),
-                                                initial_comment=Strings["YOUR_LOGS"])
-                    return
-        except:
-            message.reply(Strings["LOGS_WRONG_FORMAT"])
-            return
-    # Get the logs for the specified date range and the specified database
-    elif len(tokens) == 3:
-        try:
-            target_time = datetime.strptime(tokens[0], "%m-%d-%Y")
-            target_time_end = datetime.strptime(tokens[1], "%m-%d-%Y")
-            final_lines = ""
-            while target_time <= target_time_end:
-                filename = "{}-{}.csv".format(target_time.strftime("%m"),
-                                              target_time.strftime("%Y"))
-                final_lines += hf.logs_as_list(filename, target_time, tokens[2])
-                target_time = target_time + timedelta(days=1)
-
-            if final_lines != "":
-                filename = "{}_to_{}_for_{}.csv".format(tokens[0], tokens[1], tokens[2])
-                with open ("user_logs/{}".format(filename), "w") as f:
-                    f.write(final_lines)
-
-                message.channel.upload_file(filename, "user_logs/{}".format(filename),
-                                            initial_comment=Strings["YOUR_LOGS"])
-                return
-        except:
-            message.reply(Strings["LOGS_WRONG_FORMAT"])
+            message.channel.upload_file(filename, "user_logs/{}".format(filename),
+                                        initial_comment=Strings["YOUR_LOGS"])
             return
 
     message.reply(Strings["NO_LOGS_AVAILABLE"])

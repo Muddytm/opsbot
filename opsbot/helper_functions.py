@@ -248,7 +248,7 @@ def grant(message, db, reason, readonly):
         grant_sql_access(message, db, reason, readonly)
 
 
-def logs_as_list(filename, target_time, db=None):
+def logs_as_list(filename, target_time, db=None, user=None, perms=None):
     """Return logs in a file as a list, according to filename."""
     log_lines = []
     if os.path.exists('{}{}'.format(sql_log_base, filename)):
@@ -261,10 +261,46 @@ def logs_as_list(filename, target_time, db=None):
         timestamp = tokens[0].split()[0]
         timestamp = timestamp[5:] + "-" + timestamp[:4]
         if (datetime.strptime(timestamp, "%m-%d-%Y") == target_time):
-            if not db:
-                final_lines += (line + "\n")
-            else:
-                if db in tokens[1].strip():
-                    final_lines += (line + "\n")
+            if db:
+                if not wildcard_in_text(db, tokens[1]):
+                    continue
+
+            if user:
+                if not wildcard_in_text(user, tokens[2]):
+                    continue
+
+            if perms:
+                if not (perms.lower() == "readonly" or perms.lower() == "readwrite"):
+                    continue
+
+                if perms.lower() == "readonly" and len(tokens) >= 5 and tokens[4] != "readonly":
+                    continue
+                elif perms.lower() == "readwrite" and len(tokens) >= 5 and tokens[4] != "readwrite":
+                    continue
+
+            final_lines += (line + "\n")
 
     return final_lines
+
+
+def wildcard_in_text(target, text):
+    """Check for a wildcard token's presence in a string. Used mainly for
+    logs_as_list.
+    """
+    target = target.strip()
+    text = text.strip()
+    if "*" in target:
+        if target.startswith("*"):
+            if target.endswith("*"):
+                if target[1:][:-1] in text:
+                    return True
+            else:
+                if text.endswith(target[1:]):
+                    return True
+        elif target.endswith("*"):
+            if text.startswith(target[:-1]):
+                return True
+
+    else:
+        if text == target:
+            return True
