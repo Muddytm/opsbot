@@ -180,6 +180,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
             level = user["approval_level"]
 
     if (level == 10) or (level == 50):
+        # Tell the user if there are no databases by that name
         if (len(requested_dbs)) == 0:
             message.reply(Strings['DATABASE_UNKNOWN'].format(db))
             return

@@ -102,10 +102,13 @@ def create_sql_login(user, password, database, expire, readonly, reason):
     active_logins = {}
     created_login = False
 
+    # Get active_sql.json
     if os.path.isfile(sql_logins):
         with open(sql_logins) as data_file:
             active_logins = json.load(data_file)
 
+    # If user not in active_logins, then user does not currently have access to
+    # any dbs (and thus doesn't have a login), so create a login
     if user not in active_logins:
         active_logins[user] = {}
         sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
