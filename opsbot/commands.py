@@ -77,37 +77,43 @@ def notify(message):
                 users = hf.get_users()
                 for user in users:
                     if user["name"] == person:
+                        dbs = []
+                        for grant in info[person]:
+                            dbs.append(grant["db"])
                         chan = hf.find_channel(message._client.channels, user["id"])
                         if flag is "hour":
                             message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(info[person])) + "\n"
+                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
                                                          "" + Strings["NOTIFY_EXPIRE_INFO"])
-                            for db in info[person]:
+                            for db in dbs:
                                 logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), db)
                         elif flag is "tenmins":
                             message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(info[person])) + "\n"
+                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
                                                          "" + Strings["NOTIFY_EXPIRE_INFO"])
-                            for db in info[person]:
+                            for db in dbs:
                                 logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), db)
-        elif flag is "deleted":
-            with open("data/deleted.json") as deleted:
-                deleted_users = json.load(deleted)
-
-            for person, dbs in deleted_users.items():
-                if not dbs: # If db list is empty
-                    continue
-                users = hf.get_users()
-                for user in users:
-                    if person == user["name"]:
-                        chan = hf.find_channel(message._client.channels, user["id"])
-                        message._client.send_message(chan,
-                                                     Strings['EXPIRE'].format(", ".join(dbs)))
-                        for db in dbs:
-                            logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), db)
-                        deleted_users[person] = []
-                        with open("data/deleted.json", 'w') as outfile:
-                            json.dump(deleted_users, outfile)
+        # elif flag is "deleted":
+        #     with open("data/deleted.json") as deleted:
+        #         deleted_users = json.load(deleted)
+        #
+        #     for person in deleted_users:
+        #         if not deleted_users[person]: # If db list is empty
+        #             continue
+        #         users = hf.get_users()
+        #         for user in users:
+        #             if person == user["name"]:
+        #                 dbs = []
+        #                 for grant in deleted_users[person]:
+        #                     dbs.append(grant["db"])
+        #                 chan = hf.find_channel(message._client.channels, user["id"])
+        #                 message._client.send_message(chan,
+        #                                              Strings['EXPIRE'].format(", ".join(dbs)))
+        #                 for db in dbs:
+        #                     logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), db)
+        #                 deleted_users[person] = []
+        #                 with open("data/deleted.json", 'w') as outfile:
+        #                     json.dump(deleted_users, outfile)
 
         time.sleep(5)
 
@@ -325,113 +331,114 @@ def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
     hf.grant(message, db, reason, False)
 
+# NOTE: DEPRECATED
+# @respond_to("^logs$")
+# def logs_help(message):
+#     """Return brief information on logs."""
+#     message.reply("{}\n{}\n{}".format(Strings["LOGS_HELP_1"],
+#                                       Strings["LOGS_HELP_2"],
+#                                       Strings["LOGS_HELP_3"]))
 
-@respond_to("^logs$")
-def logs_help(message):
-    """Return brief information on logs."""
-    message.reply("{}\n{}\n{}".format(Strings["LOGS_HELP_1"],
-                                      Strings["LOGS_HELP_2"],
-                                      Strings["LOGS_HELP_3"]))
 
-
-@respond_to("^logs (.*)")
-def list_logs(message, target):
-    """Post logs with parameters available for a single date OR range of dates,
-    specified database, specified user, and/or specified access type.
-    """
-
-    tokens = target.split()
-    chan = hf.find_channel(message._client.channels, message._get_user_id())
-
-    target_time = None
-    time_start = None
-    time_end = None
-    db = None
-    user = None
-    perms = None
-
-    for token in tokens:
-        if token.lower().startswith("date:"):
-            target_time = token[5:]
-            target_time_origin = target_time
-        elif token.lower().startswith("from:"):
-            time_start = token[5:]
-            time_start_origin = time_start
-        elif token.lower().startswith("to:"):
-            time_end = token[3:]
-            time_end_origin = time_end
-        elif token.lower().startswith("db:"):
-            db = token[3:]
-        elif token.lower().startswith("user:"):
-            user = token[5:]
-        elif token.lower().startswith("perms:"):
-            perms = token[6:]
-
-    # Cannot have a "date" parameter alongside "from"/"to" parameter(s)
-    if target_time and (time_start or time_end):
-        message.reply(Strings["LOGS_TIME_FORMAT_ERROR"])
-        return
-
-    # Cannot have a "from" without a "to" or vice versa
-    if (time_start and (not time_end)) or (time_end and (not time_start)):
-        message.reply(Strings["LOGS_TIME_RANGE_FORMAT_ERROR"])
-        return
-
-    if (not target_time) and (not time_start) and (not time_end):
-        message.reply(Strings["LOGS_NO_TIME_SPECIFIED"])
-        return
-
-    # Check that the dates given are in the correct format (MM-DD-YYYY)
-    try:
-        if target_time:
-            target_time = datetime.strptime(target_time, "%m-%d-%Y")
-        if time_start:
-            time_start = datetime.strptime(time_start, "%m-%d-%Y")
-        if time_end:
-            time_end = datetime.strptime(time_end, "%m-%d-%Y")
-    except:
-        message.reply(Strings["LOGS_WRONG_FORMAT"])
-        return
-
-    filename_suffix = ""
-    if db:
-        filename_suffix += ("_db-{}".format(db.replace("*", "")))
-    if user:
-        filename_suffix += ("_user-{}".format(user.replace("*", "")))
-
-    if target_time and (not time_start) and (not time_end):
-        filename = "{}-{}.csv".format(target_time.strftime("%m"),
-                                      target_time.strftime("%Y"))
-
-        final_lines = hf.logs_as_list(filename, target_time, db, user, perms)
-
-        if final_lines != "":
-            filename = "{}{}.csv".format(target_time_origin, filename_suffix)
-            with open ("user_logs/{}".format(filename), "w") as f:
-                    f.write(final_lines)
-
-            message.channel.upload_file(filename, "user_logs/{}".format(filename),
-                                        initial_comment=Strings["YOUR_LOGS"])
-            return
-
-    if (time_start and time_end) and not target_time:
-        final_lines = ""
-        while time_start <= time_end:
-            filename = "{}-{}.csv".format(time_start.strftime("%m"),
-                                          time_start.strftime("%Y"))
-            final_lines += hf.logs_as_list(filename, time_start, db, user, perms)
-            time_start = time_start + timedelta(days=1)
-
-        if final_lines != "":
-            filename = "{}_to_{}{}.csv".format(time_start_origin, time_end_origin, filename_suffix)
-            with open ("user_logs/{}".format(filename), "w") as f:
-                f.write(final_lines)
-
-            message.channel.upload_file(filename, "user_logs/{}".format(filename),
-                                        initial_comment=Strings["YOUR_LOGS"])
-            return
-
-    message.reply(Strings["NO_LOGS_AVAILABLE"])
+# NOTE: DEPRECATED
+# @respond_to("^logs (.*)")
+# def list_logs(message, target):
+#     """Post logs with parameters available for a single date OR range of dates,
+#     specified database, specified user, and/or specified access type.
+#     """
+#
+#     tokens = target.split()
+#     chan = hf.find_channel(message._client.channels, message._get_user_id())
+#
+#     target_time = None
+#     time_start = None
+#     time_end = None
+#     db = None
+#     user = None
+#     perms = None
+#
+#     for token in tokens:
+#         if token.lower().startswith("date:"):
+#             target_time = token[5:]
+#             target_time_origin = target_time
+#         elif token.lower().startswith("from:"):
+#             time_start = token[5:]
+#             time_start_origin = time_start
+#         elif token.lower().startswith("to:"):
+#             time_end = token[3:]
+#             time_end_origin = time_end
+#         elif token.lower().startswith("db:"):
+#             db = token[3:]
+#         elif token.lower().startswith("user:"):
+#             user = token[5:]
+#         elif token.lower().startswith("perms:"):
+#             perms = token[6:]
+#
+#     # Cannot have a "date" parameter alongside "from"/"to" parameter(s)
+#     if target_time and (time_start or time_end):
+#         message.reply(Strings["LOGS_TIME_FORMAT_ERROR"])
+#         return
+#
+#     # Cannot have a "from" without a "to" or vice versa
+#     if (time_start and (not time_end)) or (time_end and (not time_start)):
+#         message.reply(Strings["LOGS_TIME_RANGE_FORMAT_ERROR"])
+#         return
+#
+#     if (not target_time) and (not time_start) and (not time_end):
+#         message.reply(Strings["LOGS_NO_TIME_SPECIFIED"])
+#         return
+#
+#     # Check that the dates given are in the correct format (MM-DD-YYYY)
+#     try:
+#         if target_time:
+#             target_time = datetime.strptime(target_time, "%m-%d-%Y")
+#         if time_start:
+#             time_start = datetime.strptime(time_start, "%m-%d-%Y")
+#         if time_end:
+#             time_end = datetime.strptime(time_end, "%m-%d-%Y")
+#     except:
+#         message.reply(Strings["LOGS_WRONG_FORMAT"])
+#         return
+#
+#     filename_suffix = ""
+#     if db:
+#         filename_suffix += ("_db-{}".format(db.replace("*", "")))
+#     if user:
+#         filename_suffix += ("_user-{}".format(user.replace("*", "")))
+#
+#     if target_time and (not time_start) and (not time_end):
+#         filename = "{}-{}.csv".format(target_time.strftime("%m"),
+#                                       target_time.strftime("%Y"))
+#
+#         final_lines = hf.logs_as_list(filename, target_time, db, user, perms)
+#
+#         if final_lines != "":
+#             filename = "{}{}.csv".format(target_time_origin, filename_suffix)
+#             with open ("user_logs/{}".format(filename), "w") as f:
+#                     f.write(final_lines)
+#
+#             message.channel.upload_file(filename, "user_logs/{}".format(filename),
+#                                         initial_comment=Strings["YOUR_LOGS"])
+#             return
+#
+#     if (time_start and time_end) and not target_time:
+#         final_lines = ""
+#         while time_start <= time_end:
+#             filename = "{}-{}.csv".format(time_start.strftime("%m"),
+#                                           time_start.strftime("%Y"))
+#             final_lines += hf.logs_as_list(filename, time_start, db, user, perms)
+#             time_start = time_start + timedelta(days=1)
+#
+#         if final_lines != "":
+#             filename = "{}_to_{}{}.csv".format(time_start_origin, time_end_origin, filename_suffix)
+#             with open ("user_logs/{}".format(filename), "w") as f:
+#                 f.write(final_lines)
+#
+#             message.channel.upload_file(filename, "user_logs/{}".format(filename),
+#                                         initial_comment=Strings["YOUR_LOGS"])
+#             return
+#
+#     message.reply(Strings["NO_LOGS_AVAILABLE"])
 
 
 @respond_to("^approved$")

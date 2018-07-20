@@ -156,20 +156,22 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
     # This is using ast_left (if there's an asterisk on the left of the db name)
     # and ast_right (vice versa) to determine which dbs should be added to the
     # list. If both are False, just look for a db of that exact name.
-    for db_name in db_list:
-        if ast_left:
-            if ast_right:
-                if db in db_name:
-                    requested_dbs.append(db_name)
+    # TODO: implement this * business with glob instead.
+    for server in db_list:
+        for db_name in db_list[server]:
+            if ast_left:
+                if ast_right:
+                    if db in db_name:
+                        requested_dbs.append({"db": db_name, "server": server})
+                else:
+                    if db_name.endswith(db):
+                        requested_dbs.append({"db": db_name, "server": server})
+            elif ast_right:
+                if db_name.startswith(db):
+                    requested_dbs.append({"db": db_name, "server": server})
             else:
-                if db_name.endswith(db):
-                    requested_dbs.append(db_name)
-        elif ast_right:
-            if db_name.startswith(db):
-                requested_dbs.append(db_name)
-        else:
-            if db == db_name:
-                requested_dbs.append(db_name)
+                if db == db_name:
+                    requested_dbs.append({"db": db_name, "server": server})
 
     # Get approval level of requester, to see if they're approved.
     users = get_users()
@@ -188,34 +190,45 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         password = generate_password()
         chan = find_channel(message._client.channels, message._get_user_id())
         expiration = pass_good_until() # + timedelta(seconds=offset)
-        created_flag = False
+        login_created = False
+        granted_msg = ""
+        extended_msg = ""
         for db in requested_dbs:
-            created = sql.create_sql_login(name,
-                                           password,
-                                           db,
-                                           expiration,
-                                           readonly,
-                                           reason)
-            # We want to remember if the password was ever created so we
-            # can have a message about it.
-            if created:
-                created_flag = True
+            user_created, login_flag = sql.create_sql_login(name,
+                                                               password,
+                                                               db["db"],
+                                                               db["server"],
+                                                               expiration,
+                                                               readonly,
+                                                               reason)
 
-        # We want the expiration time to look nice.
-        friendly_exp = friendly_time(expiration)
+            # We want the expiration time to look nice.
+            friendly_exp = friendly_time(expiration)
 
-        # If a sql login/user was created, we want the user to know.
-        if created_flag:
-            message.reply(Strings['GRANTED_ACCESS'].format(db, friendly_exp))
-            pass_created = Strings['PASSWORD_CREATED'].format(db, password)
-            message._client.send_message(chan, pass_created)
+            # We just want to know if a login was created once:
+            if login_flag:
+                login_created = True
+
+            # If database access was granted...
+            if user_created:
+                granted_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"])
+            # If database access was extended...
+            else:
+                extended_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"])
+
+        # Post message about access granted
+        if granted_msg != "":
+            message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg))
+
+        # Post message about access extended
+        if extended_msg != "":
+            message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg))
+
+        # Give password or tell user to use the one they've received already
+        if login_created:
+            message._client.send_message(chan, Strings["PASSWORD_CREATED"].format(password))
         else:
-            message.reply(Strings['EXTENDED_ACCESS'].format(db, friendly_exp))
-            pass_reused = Strings['PASSWORD_REUSED'].format(db)
-            message._client.send_message(chan, pass_reused)
-
-        #if (len(requested_dbs) > 1):
-        #    message.reply('{} databases affected.'.format(len(requested_dbs)))
+            message._client.send_message(chan, Strings["PASSWORD_REUSED"])
 
         slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
         message._client.send_message(chan, slack_id_msg)

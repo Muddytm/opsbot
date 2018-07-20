@@ -12,10 +12,10 @@ USERS_FOUND: ':grey_exclamation: {} users found. Try `search <name>` to find som
 DATABASE_SERVER: ':grey_exclamation: The database `{}` is on the server `<{}>`'
 DATABASE_UNKNOWN: ":x: This database ({}) doesn't seem to exist. Is it spelled correctly?"
 GRANT_EXAMPLE: ':x: You must supply a reason for access, like: `grant {} salesforce ticket 123456`'
-GRANTED_ACCESS: ":unlock: Granting access for database '{}' until *{}*. Password sent via direct message."
-EXTENDED_ACCESS: ":hourglass_flowing_sand: Extended access for database '{}' until *{}*. Password is unchanged."
-PASSWORD_CREATED: ":old_key: Password to access '{}': `{}`"
-PASSWORD_REUSED: ":grey_exclamation: To access '{}', your password is the same as your previous grant request."
+GRANTED_ACCESS: ":unlock: Granted access for the following database(s) until *{}*:\n```{}```\nPassword included in direct message."
+EXTENDED_ACCESS: ":hourglass_flowing_sand: Extended access for the following database(s) until *{}*:\n```{}```\nPassword is unchanged."
+PASSWORD_CREATED: ":old_key: Your password is `{}`."
+PASSWORD_REUSED: ":grey_exclamation: To access your requested databases, use the password I last sent to you."
 SLACK_ID: ":grey_exclamation: Reminder: database access expires at *{}*. Use your Slack id ({}) as your username."
 NOT_APPROVED_YET: ":x: Unfortunately, you're not approved yet. Start the approval process by sending me a direct message saying 'approve me'."
 NOTIFY_EXPIRE_HOUR: ":exclamation: You have one hour left before your access expires for the following database(s): {}"

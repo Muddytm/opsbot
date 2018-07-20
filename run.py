@@ -38,6 +38,7 @@ def main():
     # task_threads.append(server_list_task)
 
     delete_user_task = opsbot.tasks.DeleteUser()
+    delete_user_task.thread_work_timer = config.DELETE_USER_INTERVAL
     task_threads.append(delete_user_task)
 
     #notify_user_task = opsbot.tasks.NotifyUser()
