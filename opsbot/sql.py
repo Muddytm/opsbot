@@ -23,32 +23,43 @@ notify_hour = config.NOTIFICATION_THRESHOLD_HOUR
 notify_tenmins = config.NOTIFICATION_THRESHOLD_TENMINS
 
 
-def execute_sql(sql, database=None, server=None, get_rows=False):
+def execute_sql(sql, server, database=None, get_rows=False):
     """Execute a SQL statement."""
-    user = config.AZURE_USER
-    if server:
-        user += "@{}".format(server)
+    #sql = "DROP LOGIN [caleb.hawkins]"
+    #server = "mcgintsql01"
+    user = config.AZURE_USER + "@" + server
     password = config.AZURE_PASSWORD
-    dsn = config.AZURE_DSN
+    dsn = server #config.AZURE_DSN
     db = ''
     rows = []
-    if database is not None:
+    if database:
         db = 'database=' + database
-    conn_string = 'DSN={};UID={};PWD={};{}'.format(db, user, password, db)
-    #conn_string = "Driver={ODBC Driver 13 for SQL Server};Server=tcp:{}." +
-    #              "database.windows.net,1433;Database={};Uid={}@{};Pwd={};" +
-    #              "Encrypt=yes;TrustServerCertificate=no;Connection" +
-    #              "Timeout=30;".format(server, database,)
-    connection = pyodbc.connect(conn_string)
+    else:
+        db = ""
+
+    conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
+    # conn_string = ("Driver={{ODBC Driver 13 for SQL Server}};Server=tcp:{}." +
+    #                "database.windows.net,1433;{}Uid={};Pwd={};" +
+    #                "Encrypt=yes;TrustServerCertificate=no;Connection" +
+    #                "Timeout=30;").format(server, db, user, password)
+    #print (conn_string)
+    #print (sql)
+    try:
+        connection = pyodbc.connect(conn_string)
+    except pyodbc.InterfaceError:
+        print ("Login failed.")
+        return None
     cursor = connection.execute(sql)
     if get_rows:
         rows = cursor.fetchall()
     connection.commit()
     connection.close()
+    #print ("exit now!")
+    #time.sleep(60)
     return rows
 
 
-def execute_sql_count(sql, database=None):
+def execute_sql_count(sql, server, database=None):
     """Execute a SQL statement and return the count value.
 
     This works like execute_sql() but presumes the SQL looks like:
@@ -57,33 +68,43 @@ def execute_sql_count(sql, database=None):
 
     The query is run and the count value is returned.
     """
-    row = execute_sql(sql, database, True)
+    row = execute_sql(sql, server, database)
+    #print (row)
     result = -1
     if row:
         result = row[0][0]
     return result
 
 
-def delete_sql_user(user, database):
+def delete_sql_user(user, server, database):
     """Delete a SQL user."""
-    if not sql_user_exists(user, database):
-        return
+    print ("deleting {} from serv {} and db {}".format(user, server, database))
+    #if not sql_user_exists(user, server, database):
+    #    return
     sql = "DROP USER IF EXISTS [{}]".format(user)
-    #execute_sql(sql, database)
-    print ("SQL: " + sql)
+    print ("lets delete it now")
+    try:
+        execute_sql(sql, server, database)
+        print ("SQL: " + sql)
+        return True
+    except:
+        return False
 
 
-def delete_sql_login(user):
+def delete_sql_login(user, server):
     """Delete a SQL login."""
-    if not sql_user_exists(user):
-        return
-
+    #if not sql_user_exists(user, server):
+    #    return
     sql = "DROP LOGIN [{}]".format(user)
-    #execute_sql(sql)
-    print ("SQL: " + sql)
+    try:
+        execute_sql(sql, server)
+        print ("SQL: " + sql)
+        return True
+    except:
+        return False
 
 
-def sql_user_exists(user, database=None):
+def sql_user_exists(user, server, database=None):
     """Return True if the SQL login already exists for a user.
 
     This queries the master if no database is selected (so checks for a
@@ -91,10 +112,11 @@ def sql_user_exists(user, database=None):
     database user)
     """
     table = 'sys.sql_logins'
-    if database is not None:
+    if database:
        table = 'sysusers'
     sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
-    count = execute_sql_count(sql, database)
+    count = execute_sql_count(sql, server, database)
+    print (count)
     if (count > 0):
        return True
     return False
@@ -125,8 +147,11 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
             databases = json.load(data_file)
         for serv in databases:
             sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
-            #execute_sql(sql, None, serv)
             print ("SQL: " + sql)
+            try:
+                execute_sql(sql, serv)
+            except pyodbc.InterfaceError:
+                print ("Login failed :(")
         created_login = True
 
     # If user does not have access to this database yet, give access
@@ -141,7 +166,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
     # Create granted instance
     if not found:
         sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
-        #execute_sql(sql, database, server)
+        execute_sql(sql, server, database)
         print ("SQL: " + sql)
         active_logins[user].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
@@ -159,7 +184,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         role = 'db_datawriter'
         rights = 'readwrite'
         sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
-        #execute_sql(sql, database)
+        execute_sql(sql, server, database)
         print ("SQL: " + sql)
 
     log = '{}, \"{}\", {}\n'.format(user,
@@ -197,7 +222,8 @@ def build_database_list():
 
     servers = {}
     for value in r.json()["value"]:
-        servers[value["name"]] = []
+        if value["name"] != "sysops":
+            servers[value["name"]] = []
 
     for server in servers:
         headers = {"Authorization": bearer, "Content-Type": "application/json"}
@@ -231,20 +257,32 @@ def delete_expired_users():
                     expired = datetime.now() # - delta
                     user_expires = datetime.strptime(people[user][i]["expiration"], "%Y-%m-%dT%H:%M:%S.%f")
                     if user_expires < expired:
-                        success = True #delete_sql_user(user, people[user][i]["db"])
+                        success = delete_sql_user(user, people[user][i]["server"],
+                                                  people[user][i]["db"])
                         if success:
+                            data = {"db": people[user][i]["db"], "server": people[user][i]["server"]}
+                            notified = False
+                            while not notified:
+                                with open("data/notified.json") as notified_users:
+                                    n_users = json.load(notified_users)
+
+                                if data in n_users["deleted"][user]:
+                                    notified = True
+                                else:
+                                    time.sleep(5)
+
                             logging.info("{}, [USER REMOVED SUCCESSFULLY]\n".format(user), people[user][i]["db"])
                             del people_copy[user][i]
                             people_changed = True
                         else:
-                            logging.info("{}, [USER REMOVAL FAILED]\n".format(user), db)
+                            logging.info("{}, [USER REMOVAL FAILED]\n".format(user), people[user][i]["db"])
 
                 # If list is empty, we delete logins
                 if not people[user]:
                     with open(db_path) as data_file:
                         databases = json.load(data_file)
                     for serv in databases:
-                        success = True #delete_sql_login(user)
+                        success = delete_sql_login(user, serv)
                         if success:
                             logging.info("{}, [LOGIN REMOVED SUCCESSFULLY]\n".format(user), serv)
                             people_changed = True
@@ -289,28 +327,36 @@ def notify_users(interval):
             db = people[user][i]["db"]
             server = people[user][i]["server"]
             exp = people[user][i]["expiration"]
+            user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
+            expired = datetime.now()
             if interval is "hour":
                 if user not in notified_users["hour"]:
                     notified_users["hour"][user] = []
 
-                user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
-                expired = datetime.now()
+                data = {"db": db, "server": server}
                 delta = timedelta(minutes=notify_hour)
                 if user_expires > expired:
-                    if ((user_expires - expired) < delta) and (db not in notified_users["hour"][user]):
-                        info[user].append({"db": db, "server": server})
-                        notified_users["hour"][user].append(db)
+                    if ((user_expires - expired) < delta) and (data not in notified_users["hour"][user]):
+                        info[user].append(data)
+                        notified_users["hour"][user].append(data)
             elif interval is "tenmins":
                 if user not in notified_users["tenmins"]:
                     notified_users["tenmins"][user] = []
 
-                user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
-                expired = datetime.now()
+                data = {"db": db, "server": server}
                 delta = timedelta(minutes=notify_tenmins)
                 if user_expires > expired:
-                    if ((user_expires - expired) < delta) and (db not in notified_users["tenmins"][user]):
-                        info[user].append({"db": db, "server": server})
-                        notified_users["tenmins"][user].append(db)
+                    if ((user_expires - expired) < delta) and (data not in notified_users["tenmins"][user]):
+                        info[user].append(data)
+                        notified_users["tenmins"][user].append(data)
+            elif interval is "deleted":
+                if user not in notified_users["deleted"]:
+                    notified_users["deleted"][user] = []
+
+                data = {"db": db, "server": server}
+                if user_expires < expired and (data not in notified_users["deleted"][user]):
+                    info[user].append(data)
+                    notified_users["deleted"][user].append(data)
 
     with open("data/notified.json", 'w') as outfile:
         json.dump(notified_users, outfile)

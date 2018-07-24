@@ -61,59 +61,43 @@ def notify(message):
                   "be notified if their access is about to expire.")
     flag = "tenmins"
     while True:
-        if flag is "tenmins":
+        if flag is "deleted":
             info = sql.notify_users("hour")
             flag = "hour"
         elif flag is "hour":
             info = sql.notify_users("tenmins")
-            flag = "deleted"
-        elif flag is "deleted":
             flag = "tenmins"
+        elif flag is "tenmins":
+            info = sql.notify_users("deleted")
+            flag = "deleted"
 
-        if (flag is "hour") or (flag is "tenmins"):
-            for person in info:
-                if len(info[person]) == 0:
-                    continue
-                users = hf.get_users()
-                for user in users:
-                    if user["name"] == person:
-                        dbs = []
-                        for grant in info[person]:
-                            dbs.append(grant["db"])
-                        chan = hf.find_channel(message._client.channels, user["id"])
-                        if flag is "hour":
-                            message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
-                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
-                            for db in dbs:
-                                logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), db)
-                        elif flag is "tenmins":
-                            message._client.send_message(chan,
-                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
-                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
-                            for db in dbs:
-                                logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), db)
-        # elif flag is "deleted":
-        #     with open("data/deleted.json") as deleted:
-        #         deleted_users = json.load(deleted)
-        #
-        #     for person in deleted_users:
-        #         if not deleted_users[person]: # If db list is empty
-        #             continue
-        #         users = hf.get_users()
-        #         for user in users:
-        #             if person == user["name"]:
-        #                 dbs = []
-        #                 for grant in deleted_users[person]:
-        #                     dbs.append(grant["db"])
-        #                 chan = hf.find_channel(message._client.channels, user["id"])
-        #                 message._client.send_message(chan,
-        #                                              Strings['EXPIRE'].format(", ".join(dbs)))
-        #                 for db in dbs:
-        #                     logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), db)
-        #                 deleted_users[person] = []
-        #                 with open("data/deleted.json", 'w') as outfile:
-        #                     json.dump(deleted_users, outfile)
+        for person in info:
+            if len(info[person]) == 0:
+                continue
+            users = hf.get_users()
+            for user in users:
+                if user["name"] == person:
+                    dbs = []
+                    for grant in info[person]:
+                        dbs.append(grant["db"])
+                    chan = hf.find_channel(message._client.channels, user["id"])
+                    if flag is "hour":
+                        message._client.send_message(chan,
+                                                     Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
+                                                     "" + Strings["NOTIFY_EXPIRE_INFO"])
+                        for db in dbs:
+                            logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), db)
+                    elif flag is "tenmins":
+                        message._client.send_message(chan,
+                                                     Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
+                                                     "" + Strings["NOTIFY_EXPIRE_INFO"])
+                        for db in dbs:
+                            logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), db)
+                    elif flag is "deleted":
+                        message._client.send_message(chan,
+                                                     Strings['EXPIRE'].format(", ".join(dbs)))
+                        for db in dbs:
+                            logging.info("{}, [NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), db)
 
         time.sleep(5)
 
