@@ -54,7 +54,7 @@ def get_admins():
     users = get_users()
     admins = []
     for user in users:
-        if user["approval_level"] == 50:
+        if user["approval_level"] == "admin":
             admins.append(user)
 
     return admins
@@ -64,17 +64,6 @@ def save_users(user_list):
     """Save dict of users to users.json."""
     with open(user_path, "w") as outfile:
         json.dump(user_list, outfile)
-
-
-def level_name(num):
-    """Return appropriate approval level name for the number parameter.
-
-    Ex: 50 = "admin".
-    """
-    level_names = {"50": "admin", "10": "approved", "5": "expired",
-                   "0": "unknown", "-10": "denied"}
-
-    return level_names[str(num)]
 
 
 def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS):
@@ -173,6 +162,11 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
                 if db == db_name:
                     requested_dbs.append({"db": db_name, "server": server})
 
+    limit = 10
+    if len(requested_dbs) >= limit:
+        message.reply(Strings["TOO_MANY_DBS"].format(str(len(requested_dbs)), str(limit)))
+        return
+
     # Get approval level of requester, to see if they're approved.
     users = get_users()
     requester = message._get_user_id()
@@ -181,7 +175,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
             name = user["name"]
             level = user["approval_level"]
 
-    if (level == 10) or (level == 50):
+    if (level == "approved") or (level == "admin"):
         # Tell the user if there are no databases by that name
         if (len(requested_dbs)) == 0:
             message.reply(Strings['DATABASE_UNKNOWN'].format(db))
@@ -233,7 +227,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
         message._client.send_message(chan, slack_id_msg)
         return
-    if level == -10:
+    if level == "denied":
         message.reply('Request denied')
         return
 
@@ -260,61 +254,3 @@ def grant(message, db, reason, readonly):
         grant_sql_access(message, db[:-1], reason, readonly, False, True)
     else:
         grant_sql_access(message, db, reason, readonly)
-
-
-def logs_as_list(filename, target_time, db=None, user=None, perms=None):
-    """Return logs in a file as a list, according to filename."""
-    log_lines = []
-    if os.path.exists('{}{}'.format(sql_log_base, filename)):
-        with open('{}{}'.format(sql_log_base, filename), 'r') as f:
-            log_lines = f.readlines()
-
-    final_lines = ""
-    for line in log_lines:
-        tokens = line.split(",")
-        timestamp = tokens[0].split()[0]
-        timestamp = timestamp[5:] + "-" + timestamp[:4]
-        if (datetime.strptime(timestamp, "%m-%d-%Y") == target_time):
-            if db:
-                if not wildcard_in_text(db, tokens[1]):
-                    continue
-
-            if user:
-                if not wildcard_in_text(user, tokens[2]):
-                    continue
-
-            if perms:
-                if not (perms.lower() == "readonly" or perms.lower() == "readwrite"):
-                    continue
-
-                if perms.lower() == "readonly" and len(tokens) >= 5 and tokens[4] != "readonly":
-                    continue
-                elif perms.lower() == "readwrite" and len(tokens) >= 5 and tokens[4] != "readwrite":
-                    continue
-
-            final_lines += (line + "\n")
-
-    return final_lines
-
-
-def wildcard_in_text(target, text):
-    """Check for a wildcard token's presence in a string. Used mainly for
-    logs_as_list.
-    """
-    target = target.strip()
-    text = text.strip()
-    if "*" in target:
-        if target.startswith("*"):
-            if target.endswith("*"):
-                if target[1:][:-1] in text:
-                    return True
-            else:
-                if text.endswith(target[1:]):
-                    return True
-        elif target.endswith("*"):
-            if text.startswith(target[:-1]):
-                return True
-
-    else:
-        if text == target:
-            return True

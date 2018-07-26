@@ -1,1 +1,1 @@
-{"name": "caleb.hawkins", "access": [{"db": "thing", "server": "thing", "expiration": "time"}], "notifications": {"hours": [], "tenmins": [], "deleted": []}}
+{"name": "caleb.hawkins", "access": [], "notifications": {"tenmins": [], "hour": [], "deleted": []}}

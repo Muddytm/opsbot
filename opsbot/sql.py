@@ -42,8 +42,8 @@ def execute_sql(sql, server, database=None, get_rows=False):
     #                "database.windows.net,1433;{}Uid={};Pwd={};" +
     #                "Encrypt=yes;TrustServerCertificate=no;Connection" +
     #                "Timeout=30;").format(server, db, user, password)
-    #print (conn_string)
-    #print (sql)
+    print (conn_string)
+    print (sql)
     try:
         connection = pyodbc.connect(conn_string)
     except pyodbc.InterfaceError:
@@ -131,17 +131,18 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
     created_user = False
     created_login = False
 
-    # Get active_sql.json
-    if os.path.isfile(active_sql):
-        with open(active_sql) as data_file:
-            active_logins = json.load(data_file)
+    # Get active user json
+    if os.path.isfile("userdata/{}_active.json".format(clean(user))):
+        with open("userdata/{}_active.json".format(clean(user))) as data_file:
+            userdata = json.load(data_file)
 
-    # If user not in active_logins, then user does not currently have access to
-    # any dbs (and thus doesn't have a login), so create a login
-    if user not in active_logins:
-        # Create empty user dict in active_sql
-        active_logins[user] = []
+        if "access" not in userdata:
+            userdata["access"] = []
+    else:
+        userdata = {"name": user, "access": [], "notifications": {"hour": [], "tenmins": [], "deleted": []}}
 
+    # If user does not have access to anything then we create logins
+    if not userdata["access"]:
         # Create login on every server
         with open(db_path) as data_file:
             databases = json.load(data_file)
@@ -157,9 +158,9 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
     # If user does not have access to this database yet, give access
     found = False
     loc = None
-    for i in range(len(active_logins[user])):
-        if (active_logins[user][i]["db"] == database and
-            active_logins[user][i]["server"] == server):
+    for i in range(len(userdata["access"])):
+        if (userdata["access"][i]["db"] == database and
+            userdata["access"][i]["server"] == server):
             found = True
             loc = i
 
@@ -168,15 +169,15 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
         execute_sql(sql, server, database)
         print ("SQL: " + sql)
-        active_logins[user].append({"server": server, "db": database, "expiration": expire.isoformat()})
+        userdata["access"].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
     # Get this granted instance and set expiration time to 4 hours from now
     elif found:
-        active_logins[user][loc]["expiration"] = expire.isoformat()
+        userdata["access"][loc]["expiration"] = expire.isoformat()
 
     # Write this all out to file
-    with open(active_sql, 'w') as outfile:
-        json.dump(active_logins, outfile)
+    with open("userdata/{}_active.json".format(clean(user)), 'w') as outfile:
+        json.dump(userdata, outfile)
 
     # If readwrite, upgrade. Never downgrade
     rights = "readonly"
@@ -187,10 +188,10 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         execute_sql(sql, server, database)
         print ("SQL: " + sql)
 
-    log = '{}, \"{}\", {}\n'.format(user,
+    log = '{},\"{}\",{}\n'.format(user,
                                     reason,
                                     rights)
-    logging.info(log, database)
+    logging.info(log, server, database)
     return created_user, created_login
 
 
@@ -224,6 +225,8 @@ def build_database_list():
     for value in r.json()["value"]:
         if value["name"] != "sysops":
             servers[value["name"]] = []
+            if tags in value:
+                pass # TODO: do something
 
     for server in servers:
         headers = {"Authorization": bearer, "Content-Type": "application/json"}
@@ -240,68 +243,57 @@ def build_database_list():
 
 def delete_expired_users():
     """Find any expired users and remove them."""
-    with open(active_sql) as data_file:
-        people = json.load(data_file)
 
-    # Copying the JSON so we can edit it without risk
-    people_copy = people.copy()
+    for filename in os.listdir("userdata/"):
+        changed = False
 
-    people_changed = False
-    done = False
-    dec_i = False
-    while not done:
-        try:
-            for user in people:
-                for i in reversed(range(len(people[user]))):
-                    delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
-                    expired = datetime.now() # - delta
-                    user_expires = datetime.strptime(people[user][i]["expiration"], "%Y-%m-%dT%H:%M:%S.%f")
-                    if user_expires < expired:
-                        success = delete_sql_user(user, people[user][i]["server"],
-                                                  people[user][i]["db"])
-                        if success:
-                            data = {"db": people[user][i]["db"], "server": people[user][i]["server"]}
-                            notified = False
-                            while not notified:
-                                with open("data/notified.json") as notified_users:
-                                    n_users = json.load(notified_users)
+        with open("userdata/{}".format(filename)) as data_file:
+            userdata = json.load(data_file)
 
-                                if data in n_users["deleted"][user]:
-                                    notified = True
-                                else:
-                                    time.sleep(5)
-
-                            logging.info("{}, [USER REMOVED SUCCESSFULLY]\n".format(user), people[user][i]["db"])
-                            del people_copy[user][i]
-                            people_changed = True
-                        else:
-                            logging.info("{}, [USER REMOVAL FAILED]\n".format(user), people[user][i]["db"])
-
-                # If list is empty, we delete logins
-                if not people[user]:
-                    with open(db_path) as data_file:
-                        databases = json.load(data_file)
-                    for serv in databases:
-                        success = delete_sql_login(user, serv)
-                        if success:
-                            logging.info("{}, [LOGIN REMOVED SUCCESSFULLY]\n".format(user), serv)
-                            people_changed = True
-                        else:
-                            logging.info("{}, [LOGIN REMOVAL FAILED]\n".format(user), serv)
-                    del people_copy[user]
-        except RuntimeError:
-            print ("Dictionary changed size during iteration, trying again...")
-            time.sleep(1)
-            with open(active_sql) as data_file:
-                people = json.load(data_file)
-
-            people_copy = people.copy()
+        if "access" not in userdata:
             continue
 
-        if people_changed:
-            with open(active_sql, 'w') as outfile:
-                json.dump(people_copy, outfile)
-        done = True
+        name = userdata["name"]
+
+        for i in reversed(range(len(userdata["access"]))):
+            db = userdata["access"][i]["db"]
+            server = userdata["access"][i]["server"]
+            exp = userdata["access"][i]["expiration"]
+            delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
+            expired = datetime.now() # - delta
+            user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
+            if user_expires < expired:
+                data = {"db": db, "server": server}
+                if data in userdata["notifications"]["deleted"]:
+                    success = delete_sql_user(name, server, db)
+                    if success:
+                        logging.info("{},[USER REMOVED SUCCESSFULLY]\n".format(name), server, db)
+                        del userdata["access"][i]
+                        if data in userdata["notifications"]["deleted"]:
+                            userdata["notifications"]["deleted"].remove(data)
+                        if data in userdata["notifications"]["tenmins"]:
+                            userdata["notifications"]["tenmins"].remove(data)
+                        if data in userdata["notifications"]["hour"]:
+                            userdata["notifications"]["hour"].remove(data)
+                        changed = True
+                    else:
+                        logging.info("{},[USER REMOVAL FAILED]\n".format(name), server, db)
+
+        # If list is empty, we delete logins
+        if not userdata["access"] and changed:
+            with open(db_path) as data_file:
+                databases = json.load(data_file)
+            for server in databases:
+                success = delete_sql_login(name, server)
+                if success:
+                    logging.info("{},[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]")
+                    changed = True
+                else:
+                    logging.info("{},[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]")
+
+        if changed:
+            with open("userdata/{}".format(filename), 'w') as outfile:
+                json.dump(userdata, outfile)
 
 
 def notify_users(interval):
@@ -311,54 +303,57 @@ def notify_users(interval):
     Interval (either "hours" or "tenmins") determines what sort of check we're
     performing.
     """
-    with open(active_sql) as data_file:
-        people = json.load(data_file)
-
-    with open("data/notified.json") as notified:
-        notified_users = json.load(notified)
-
     info = {}
 
-    for user in people:
-        info[user] = []
+    for filename in os.listdir("userdata/"):
+        changed = False
+
+        with open("userdata/{}".format(filename)) as data_file:
+            userdata = json.load(data_file)
+
+        if "access" not in userdata:
+            continue
+
+        name = userdata["name"]
+
+        info[name] = []
         # For each one: if the user/database are not in notified_users, check
         # if they should be, and then append them to it.
-        for i in range(len(people[user])):
-            db = people[user][i]["db"]
-            server = people[user][i]["server"]
-            exp = people[user][i]["expiration"]
+        for i in range(len(userdata["access"])):
+            db = userdata["access"][i]["db"]
+            server = userdata["access"][i]["server"]
+            exp = userdata["access"][i]["expiration"]
             user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
             expired = datetime.now()
             if interval is "hour":
-                if user not in notified_users["hour"]:
-                    notified_users["hour"][user] = []
-
                 data = {"db": db, "server": server}
                 delta = timedelta(minutes=notify_hour)
                 if user_expires > expired:
-                    if ((user_expires - expired) < delta) and (data not in notified_users["hour"][user]):
-                        info[user].append(data)
-                        notified_users["hour"][user].append(data)
+                    if ((user_expires - expired) < delta) and (data not in userdata["notifications"]["hour"]):
+                        info[name].append(data)
+                        userdata["notifications"]["hour"].append(data)
             elif interval is "tenmins":
-                if user not in notified_users["tenmins"]:
-                    notified_users["tenmins"][user] = []
-
                 data = {"db": db, "server": server}
                 delta = timedelta(minutes=notify_tenmins)
                 if user_expires > expired:
-                    if ((user_expires - expired) < delta) and (data not in notified_users["tenmins"][user]):
-                        info[user].append(data)
-                        notified_users["tenmins"][user].append(data)
+                    if ((user_expires - expired) < delta) and (data not in userdata["notifications"]["tenmins"]):
+                        info[name].append(data)
+                        userdata["notifications"]["tenmins"].append(data)
             elif interval is "deleted":
-                if user not in notified_users["deleted"]:
-                    notified_users["deleted"][user] = []
-
                 data = {"db": db, "server": server}
-                if user_expires < expired and (data not in notified_users["deleted"][user]):
-                    info[user].append(data)
-                    notified_users["deleted"][user].append(data)
+                if user_expires < expired and (data not in userdata["notifications"]["deleted"]):
+                    info[name].append(data)
+                    userdata["notifications"]["deleted"].append(data)
 
-    with open("data/notified.json", 'w') as outfile:
-        json.dump(notified_users, outfile)
+        with open("userdata/{}".format(filename), 'w') as outfile:
+            json.dump(userdata, outfile)
 
     return info
+
+
+def clean(user):
+    """Just a little method that replaces _ with ., and vice versa."""
+    if "." in user:
+        return user.replace(".", "_")
+    elif "_" in user:
+        return user.replace("_", ".")

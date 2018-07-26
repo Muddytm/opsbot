@@ -23,18 +23,19 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = os.getenv('AZURE_SQL_USER')
-AZURE_PASSWORD = os.getenv('AZURE_SQL_PASS')
-AZURE_DSN = os.getenv('AZURE_SQL_DSN')
+AZURE_USER = ""
+AZURE_PASSWORD = ""
+AZURE_DSN = ""
+TENANT_ID = ""
+SUB_ID = ""
+CLIENT_ID = ""
+CLIENT_SECRET = ""
+RESOURCE_GROUP = ""
+SUMOLOGIC_ENDPOINT = ""
 
-# This env variable should be a comma separated list of SQL servers to pull
-# from. Something like:
-# AZURE_SQL_SERVERS=server1,server2,server3
-
-AZURE_SQL_SERVERS = os.getenv('AZURE_SQL_SERVERS', '').split(',')
 
 # Slack channel to listen to and do group replies in:
-AUTH_CHANNEL = "mcg_prod_auth" #os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
 
 # URL of a help document:
 HELP_URL = "https://isitchristmas.com/" #os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
@@ -84,7 +85,10 @@ PASSWORD_FORMAT = "*#*!*"
 PASSWORD_SYMBOLS = "@$%^&(){}<>-+="
 
 # How often (in seconds) to get a new list of databases:
-CHECK_DATABASE_INTERVAL = 3600
+CHECK_DATABASE_INTERVAL = 1800
+
+# How often (in seconds) to check for expired users
+DELETE_USER_INTERVAL = 60
 
 # How often (in seconds) to get a new list of servers:
 CHECK_SERVER_INTERVAL = 3600
