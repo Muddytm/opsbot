@@ -225,7 +225,7 @@ def build_database_list():
     for value in r.json()["value"]:
         if value["name"] != "sysops":
             servers[value["name"]] = []
-            if tags in value:
+            if "tags" in value:
                 pass # TODO: do something
 
     for server in servers:

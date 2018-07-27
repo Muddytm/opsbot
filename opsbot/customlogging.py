@@ -12,8 +12,8 @@ def info(message, server=None, database=None):
     """Logs the message at this time and writes it to the correct log."""
     if not server and not database:
         return
-    message = ("server=" + server + " database=" + database + " message=" + message)
-    message = ("time=" + str(datetime.today()) + " " + message)
+    message = (server + " database=" + database + " reason=" + message)
+    message = ("time=" + str(datetime.today()) + " server=" + message)
 
     #filename = datetime.today().strftime("%m-%Y.csv")
     filename = "temp.csv"
@@ -29,5 +29,5 @@ def info(message, server=None, database=None):
     file = "{}{}".format(sql_log_base, filename)
     print ("message written to {}".format(filename))
     with open(file) as f:
-        r = requests.post(config.SUMOLOGIC_ENDPOINT, data={"file": f, "out": "CSV"})
+        r = requests.post(config.SUMOLOGIC_ENDPOINT, data={"file": f})
         print (r)
