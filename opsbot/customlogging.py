@@ -12,7 +12,7 @@ def info(message, server=None, database=None):
     """Logs the message at this time and writes it to the correct log."""
     if not server and not database:
         return
-    message = (server + " database=" + database + " reason=" + message)
+    message = (server + " database=" + database + " user=" + message)
     message = ("time=" + str(datetime.today()) + " server=" + message)
 
     #filename = datetime.today().strftime("%m-%Y.csv")

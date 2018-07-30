@@ -20,6 +20,8 @@ import opsbot.helper_functions as hf
 user_path = config.DATA_PATH + 'users.json'
 sql_log_base = config.LOG_PATH
 
+notify_flag = False
+
 
 @respond_to("load")
 def load_slack_users(message):
@@ -63,8 +65,18 @@ def notify(message):
     Each one works by looking at notified.json or deleted.json - if the database
     is not listed for the user in question"""
     # TODO: clean up this ugly mess
-    message.reply(":gear: Started expiration checking process; users will now "
-                  "be notified if their access is about to expire.")
+
+    global notify_flag
+
+    if not notify_flag:
+        notify_flag = True
+        message.reply(":gear: Started expiration checking process; users will now "
+                      "be notified if their access is about to expire.")
+    else:
+        message.reply("Cannot have more than one running instance of the notify "
+                      "function.")
+        return
+
     flag = "tenmins"
     while True:
         if flag is "deleted":
@@ -94,18 +106,18 @@ def notify(message):
                                                      Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
                                                      "" + Strings["NOTIFY_EXPIRE_INFO"])
                         for db, server in zip(dbs, servers):
-                            logging.info("{},[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db)
+                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db)
                     elif flag is "tenmins":
                         message._client.send_message(chan,
                                                      Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
                                                      "" + Strings["NOTIFY_EXPIRE_INFO"])
                         for db, server in zip(dbs, servers):
-                            logging.info("{},[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db)
+                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db)
                     elif flag is "deleted":
                         message._client.send_message(chan,
                                                      Strings['EXPIRE'].format(", ".join(dbs)))
                         for db, server in zip(dbs, servers):
-                            logging.info("{},[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
+                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
 
         time.sleep(5)
 
@@ -293,6 +305,43 @@ def find_user_by_name(message, username):
                 message.reply("User doesn't have a channel open.")
             return
     message.reply('No user found by that name: {}.'.format(username))
+
+
+@respond_to('^dbdetails (.*)')
+def find_user_by_name(message, db):
+    """Return information regarding this db, notably what server it's on
+    and what users currently have access to it."""
+    user_list = []
+    for filename in os.listdir("userdata/"):
+
+        with open("userdata/{}".format(filename)) as data_file:
+            userdata = json.load(data_file)
+
+        for i in range(len(userdata["access"])):
+            if userdata["access"][i]["db"] == db:
+                user_list.append(userdata["name"])
+                break
+
+    with open("data/databases.json") as data_file:
+        data = json.load(data_file)
+
+    correct_server = ""
+    for server in data:
+        if db in data[server]:
+            correct_server = server
+
+    if correct_server == "":
+        message.reply("No database found!")
+        return
+
+    user_access = ""
+    if user_list:
+        user_access = "The following users currently have access: {}".format(", ".join(user_list))
+
+    message.reply("The database \"{}\" is located on server \"{}\". {}".format(db,
+                                                                               correct_server,
+                                                                               user_access))
+
 
 
 @listen_to('^grant (\S*)$')

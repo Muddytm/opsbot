@@ -44,16 +44,27 @@ def execute_sql(sql, server, database=None, get_rows=False):
     #                "Timeout=30;").format(server, db, user, password)
     print (conn_string)
     print (sql)
-    try:
-        connection = pyodbc.connect(conn_string)
-    except pyodbc.InterfaceError:
-        print ("Login failed.")
-        return None
-    cursor = connection.execute(sql)
-    if get_rows:
-        rows = cursor.fetchall()
-    connection.commit()
-    connection.close()
+    count = 0
+    while count < 3:
+        try:
+            connection = pyodbc.connect(conn_string)
+            cursor = connection.execute(sql)
+            connection.commit()
+            connection.close()
+            if get_rows:
+                rows = cursor.fetchall()
+            break
+        except pyodbc.InterfaceError:
+            print ("Login failed.")
+            break
+        except pyodbc.OperationalError:
+            if count < 2:
+                print ("Timed out...trying again.")
+            else:
+                print ("Timed out for the third time, I'm outta here.")
+
+        count += 1
+
     #print ("exit now!")
     #time.sleep(60)
     return rows
@@ -188,9 +199,9 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         execute_sql(sql, server, database)
         print ("SQL: " + sql)
 
-    log = '{},\"{}\",{}\n'.format(user,
-                                    reason,
-                                    rights)
+    log = '{} reason=\"{}\" rights={}\n'.format(user,
+                                                reason,
+                                                rights)
     logging.info(log, server, database)
     return created_user, created_login
 
@@ -267,7 +278,7 @@ def delete_expired_users():
                 if data in userdata["notifications"]["deleted"]:
                     success = delete_sql_user(name, server, db)
                     if success:
-                        logging.info("{},[USER REMOVED SUCCESSFULLY]\n".format(name), server, db)
+                        logging.info("{} reason=[USER REMOVED SUCCESSFULLY]\n".format(name), server, db)
                         del userdata["access"][i]
                         if data in userdata["notifications"]["deleted"]:
                             userdata["notifications"]["deleted"].remove(data)
@@ -277,7 +288,7 @@ def delete_expired_users():
                             userdata["notifications"]["hour"].remove(data)
                         changed = True
                     else:
-                        logging.info("{},[USER REMOVAL FAILED]\n".format(name), server, db)
+                        logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db)
 
         # If list is empty, we delete logins
         if not userdata["access"] and changed:
@@ -286,10 +297,10 @@ def delete_expired_users():
             for server in databases:
                 success = delete_sql_login(name, server)
                 if success:
-                    logging.info("{},[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]")
+                    logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]")
                     changed = True
                 else:
-                    logging.info("{},[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]")
+                    logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]")
 
         if changed:
             with open("userdata/{}".format(filename), 'w') as outfile:
