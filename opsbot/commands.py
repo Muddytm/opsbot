@@ -7,6 +7,7 @@ import opsbot.customlogging as logging
 import os
 import random
 import re
+import requests
 from six import iteritems
 from slackbot.bot import listen_to
 from slackbot.bot import respond_to
@@ -308,7 +309,7 @@ def find_user_by_name(message, username):
 
 
 @respond_to('^dbdetails (.*)')
-def find_user_by_name(message, db):
+def find_db_by_name(message, db):
     """Return information regarding this db, notably what server it's on
     and what users currently have access to it."""
     user_list = []
@@ -341,7 +342,6 @@ def find_user_by_name(message, db):
     message.reply("The database \"{}\" is located on server \"{}\". {}".format(db,
                                                                                correct_server,
                                                                                user_access))
-
 
 
 @listen_to('^grant (\S*)$')
@@ -383,3 +383,19 @@ def admins(message):
 def denied(message):
     """Returns list of denied users."""
     hf.query_users(message, hf.get_users(), "denied")
+
+
+@respond_to("^SLA$")
+@listen_to("^SLA$")
+def sla_report(message):
+    """Returns SLA report for the previous month."""
+    query = "https://rpm.newrelic.com/optimize/sla_report/run?account_id={}&application_id={}&format=csv&interval=months"
+    r = requests.get(query.format(config.NEWRELIC_ACC_ID, config.NEWRELIC_APP_ID),
+                     auth=(config.NEWRELIC_USER, config.NEWRELIC_PASS))
+
+    with open("log/sla_report.csv", "w") as f:
+        f.write(r.text)
+
+    message.channel.upload_file("sla_report.csv",
+                                "log/sla_report.csv",
+                                initial_comment="Here's your monthly SLA report.")

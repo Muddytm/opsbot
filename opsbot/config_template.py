@@ -32,6 +32,10 @@ CLIENT_ID = ""
 CLIENT_SECRET = ""
 RESOURCE_GROUP = ""
 SUMOLOGIC_ENDPOINT = ""
+NEWRELIC_ACC_ID = ""
+NEWRELIC_APP_ID = ""
+NEWRELIC_USER = ""
+NEWRELIC_PASS = ""
 
 
 # Slack channel to listen to and do group replies in:
