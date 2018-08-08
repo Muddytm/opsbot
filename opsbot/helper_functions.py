@@ -188,16 +188,20 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         granted_msg = ""
         extended_msg = ""
         for db in requested_dbs:
-            user_created, login_flag = sql.create_sql_login(name,
-                                                               password,
-                                                               db["db"],
-                                                               db["server"],
-                                                               expiration,
-                                                               readonly,
-                                                               reason)
+            user_created, login_flag, valid = sql.create_sql_login(name,
+                                                                   password,
+                                                                   db["db"],
+                                                                   db["server"],
+                                                                   expiration,
+                                                                   readonly,
+                                                                   reason)
 
             # We want the expiration time to look nice.
             friendly_exp = friendly_time(expiration)
+
+            if not valid:
+                message.reply(Strings["GRANT_EXAMPLE"].format(db["db"], db["db"]))
+                continue
 
             # We just want to know if a login was created once:
             if login_flag:
@@ -205,10 +209,10 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
 
             # If database access was granted...
             if user_created:
-                granted_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"])
+                granted_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"] + config.SERVER_SUFFIX)
             # If database access was extended...
             else:
-                extended_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"])
+                extended_msg += "Database \"{}\" on server \"{}\"\n".format(db["db"], db["server"] + config.SERVER_SUFFIX)
 
         # Post message about access granted
         if granted_msg != "":
@@ -221,11 +225,12 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         # Give password or tell user to use the one they've received already
         if login_created:
             message._client.send_message(chan, Strings["PASSWORD_CREATED"].format(password))
-        else:
+        elif (granted_msg != "" or extended_msg != ""):
             message._client.send_message(chan, Strings["PASSWORD_REUSED"])
 
-        slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
-        message._client.send_message(chan, slack_id_msg)
+        if (granted_msg != "" or extended_msg != ""):
+            slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
+            message._client.send_message(chan, slack_id_msg)
         return
     if level == "denied":
         message.reply('Request denied')

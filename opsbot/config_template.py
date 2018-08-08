@@ -23,23 +23,32 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = ""
-AZURE_PASSWORD = ""
-AZURE_DSN = ""
+AZURE_USER = "" #os.getenv('AZURE_SQL_USER')
+AZURE_PASSWORD = "" #os.getenv('AZURE_SQL_PASS')
+AZURE_DSN = "" #os.getenv('AZURE_SQL_DSN')
+RESOURCE_GROUP = ""
+
+# Stuff for Azure app registration
 TENANT_ID = ""
 SUB_ID = ""
 CLIENT_ID = ""
 CLIENT_SECRET = ""
-RESOURCE_GROUP = ""
+
+# For Sumologic
 SUMOLOGIC_ENDPOINT = ""
+
+# For New Relic
 NEWRELIC_ACC_ID = ""
 NEWRELIC_APP_ID = ""
 NEWRELIC_USER = ""
 NEWRELIC_PASS = ""
 
 
-# Slack channel to listen to and do group replies in:
+# Slack channel to listen to and do group replies in (i.e. "company_authbot")
 AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
+
+# The part that goes after the server name (i.e. ".database.windows.net")
+SERVER_SUFFIX = ""
 
 # URL of a help document:
 HELP_URL = "https://isitchristmas.com/" #os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')

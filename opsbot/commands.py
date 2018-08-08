@@ -20,6 +20,7 @@ import opsbot.helper_functions as hf
 
 user_path = config.DATA_PATH + 'users.json'
 sql_log_base = config.LOG_PATH
+public_channel = config.AUTH_CHANNEL
 
 notify_flag = False
 
@@ -117,6 +118,9 @@ def notify(message):
                     elif flag is "deleted":
                         message._client.send_message(chan,
                                                      Strings['EXPIRE'].format(", ".join(dbs)))
+                        message._client.send_message(public_channel,
+                                                     Strings["EXPIRE_PING"].format(user["name"],
+                                                                                   ", ".join(dbs)))
                         for db, server in zip(dbs, servers):
                             logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
 
@@ -208,7 +212,7 @@ def approve_me(message):
                     'APPROVER_REQUEST_DETAIL'].format(">, <@".join(names), user["name"])
 
                 #message._client.send_message(config.AUTH_CHANNEL, approval_message)
-                message._client.send_message("mcg_prod_auth", approval_message)
+                message._client.send_message(public_channel, approval_message)
             else:
                 message.reply(":x: Your approval level is already: " + str(user["approval_level"]))
 
@@ -309,6 +313,7 @@ def find_user_by_name(message, username):
 
 
 @respond_to('^dbdetails (.*)')
+@listen_to('^dbdetails (.*)')
 def find_db_by_name(message, db):
     """Return information regarding this db, notably what server it's on
     and what users currently have access to it."""
@@ -340,14 +345,24 @@ def find_db_by_name(message, db):
         user_access = "The following users currently have access: {}".format(", ".join(user_list))
 
     message.reply("The database \"{}\" is located on server \"{}\". {}".format(db,
-                                                                               correct_server,
+                                                                               correct_server + config.SERVER_SUFFIX,
                                                                                user_access))
 
 
 @listen_to('^grant (\S*)$')
 def no_reason(message, db):
-    """Display error when no reason given trying to 'grant' access."""
-    message.reply(Strings['GRANT_EXAMPLE'].format(db))
+    """Display error when no reason given trying to 'grant' access, unless
+    extending time."""
+    #message.reply(Strings['GRANT_EXAMPLE'].format(db))
+    hf.grant(message, db, "[EXTENDING ACCESS TIME]", True)
+
+
+@listen_to('^grantrw (\S*)$')
+def no_reason(message, db):
+    """Display error when no reason given trying to 'grantrw' access, unless
+    extending time."""
+    #message.reply(Strings['GRANT_EXAMPLE'].format(db))
+    hf.grant(message, db, "[EXTENDING ACCESS TIME]", False)
 
 
 @listen_to('^grant (\S*) (.*)')
@@ -385,8 +400,8 @@ def denied(message):
     hf.query_users(message, hf.get_users(), "denied")
 
 
-@respond_to("^SLA$")
-@listen_to("^SLA$")
+@respond_to("^SLA$", re.IGNORECASE)
+#@listen_to("^SLA$")
 def sla_report(message):
     """Returns SLA report for the previous month."""
     query = "https://rpm.newrelic.com/optimize/sla_report/run?account_id={}&application_id={}&format=csv&interval=months"

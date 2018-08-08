@@ -11,7 +11,7 @@ TOO_MANY_USERS: ":shrug: I have too many unknown users ({}) and can't list them 
 USERS_FOUND: ':grey_exclamation: {} users found. Try `search <name>` to find someone.'
 DATABASE_SERVER: ':grey_exclamation: The database `{}` is on the server `<{}>`'
 DATABASE_UNKNOWN: ":x: This database ({}) doesn't seem to exist. Is it spelled correctly?"
-GRANT_EXAMPLE: ':x: You must supply a reason for access, like: `grant {} salesforce ticket 123456`'
+GRANT_EXAMPLE: ':x: You must supply a reason for initial access to {}...for example: `grant {} salesforce ticket 123456`'
 GRANTED_ACCESS: ":unlock: Granted access for the following databases until *{}*:\n```{}```\nPassword included in direct message."
 EXTENDED_ACCESS: ":hourglass_flowing_sand: Extended access for the following databases until *{}*:\n```{}```\nPassword is unchanged."
 PASSWORD_CREATED: ":old_key: Your password is `{}`."
@@ -21,6 +21,7 @@ NOT_APPROVED_YET: ":x: Unfortunately, you're not approved yet. Start the approva
 NOTIFY_EXPIRE_HOUR: ":exclamation: You have one hour left before your access expires for the following databases: *{}*"
 NOTIFY_EXPIRE_TENMINS: ":exclamation: You have ten minutes left before your access expires for the following databases: *{}*"
 EXPIRE: ":closed_lock_with_key: Your granted access time has expired for the following databases: *{}*"
+EXPIRE_PING: ":closed_lock_with_key: <@{}>: Your granted access time has expired for the following databases: *{}*"
 NOTIFY_EXPIRE_INFO: ":exclamation: If you would like to extend your access time, make another grant request in the bot channel for the appropriate databases."
 LOGS_WRONG_FORMAT: ":x: Wrong format; the format is MM-DD-YYYY. Example: ```logs date:09-21-2017 *OR* logs from:07-20-2017 to:12-25-2017```"
 NO_LOGS: ":exclamation: There are no logs available for the specified period of time."

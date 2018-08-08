@@ -154,6 +154,9 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
 
     # If user does not have access to anything then we create logins
     if not userdata["access"]:
+        # If user is trying to extend time without having access first
+        if reason == "[EXTENDING ACCESS TIME]":
+            return False, False, False
         # Create login on every server
         with open(db_path) as data_file:
             databases = json.load(data_file)
@@ -177,6 +180,9 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
 
     # Create granted instance
     if not found:
+        # If user is trying to extend time without having access first
+        if reason == "[EXTENDING ACCESS TIME]":
+            return False, False, False
         sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
         execute_sql(sql, server, database)
         print ("SQL: " + sql)
@@ -203,7 +209,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
                                                 reason,
                                                 rights)
     logging.info(log, server, database)
-    return created_user, created_login
+    return created_user, created_login, True
 
 
 def database_list():
