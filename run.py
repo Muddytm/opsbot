@@ -5,6 +5,7 @@ access for users.
 """
 
 import opsbot.customlogging as logging
+import os
 import threading
 import time
 
@@ -29,6 +30,10 @@ def main():
 
     This is what is run when the script is run via command line.
     """
+
+    if not os.path.isdir("userdata"):
+        os.makedirs("userdata")
+
     db_list_task = opsbot.tasks.DBList()
     db_list_task.thread_work_timer = config.CHECK_DATABASE_INTERVAL
     task_threads.append(db_list_task)

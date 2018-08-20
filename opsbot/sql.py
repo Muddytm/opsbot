@@ -33,17 +33,17 @@ def execute_sql(sql, server, database=None, get_rows=False):
     db = ''
     rows = []
     if database:
-        db = 'database=' + database
+        db = 'Database=' + database + ";"
     else:
         db = ""
 
-    conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
-    # conn_string = ("Driver={{ODBC Driver 13 for SQL Server}};Server=tcp:{}." +
-    #                "database.windows.net,1433;{}Uid={};Pwd={};" +
-    #                "Encrypt=yes;TrustServerCertificate=no;Connection" +
-    #                "Timeout=30;").format(server, db, user, password)
-    print (conn_string)
-    print (sql)
+    #conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
+    conn_string = ("Driver={{ODBC Driver 17 for SQL Server}};Server=tcp:{}." +
+                   "database.windows.net,1433;{}Uid={};Pwd={};" +
+                   "Encrypt=yes;TrustServerCertificate=no;Connection " +
+                   "Timeout=30;").format(server, db, user, password)
+    #print (conn_string)
+    #print (sql)
     count = 0
     while count < 3:
         try:
@@ -54,14 +54,17 @@ def execute_sql(sql, server, database=None, get_rows=False):
             if get_rows:
                 rows = cursor.fetchall()
             break
-        except pyodbc.InterfaceError:
-            print ("Login failed.")
+        except pyodbc.InterfaceError as e:
+            print ("Login failed. Reason: {}".format(e))
             break
-        except pyodbc.OperationalError:
+        except pyodbc.OperationalError as e:
             if count < 2:
-                print ("Timed out...trying again.")
+                print ("Timed out...trying again. Reason: {}".format(e))
             else:
                 print ("Timed out for the third time, I'm outta here.")
+        except pyodbc.ProgrammingError as e:
+            print ("Cannot access this server: {}".format(e))
+            break
 
         count += 1
 
@@ -89,11 +92,11 @@ def execute_sql_count(sql, server, database=None):
 
 def delete_sql_user(user, server, database):
     """Delete a SQL user."""
-    print ("deleting {} from serv {} and db {}".format(user, server, database))
+    print ("Deleting {} from server {} and db {}".format(user, server, database))
     #if not sql_user_exists(user, server, database):
     #    return
     sql = "DROP USER IF EXISTS [{}]".format(user)
-    print ("lets delete it now")
+    #print ("lets delete it now")
     try:
         execute_sql(sql, server, database)
         print ("SQL: " + sql)
@@ -127,7 +130,7 @@ def sql_user_exists(user, server, database=None):
        table = 'sysusers'
     sql = "SELECT count(*) FROM {} WHERE name = '{}'".format(table, user)
     count = execute_sql_count(sql, server, database)
-    print (count)
+    #print (count)
     if (count > 0):
        return True
     return False
@@ -165,7 +168,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
             print ("SQL: " + sql)
             try:
                 execute_sql(sql, serv)
-            except pyodbc.InterfaceError:
+            except pyodbc.InterfaceError as e:
                 print ("Login failed :(")
         created_login = True
 
@@ -241,9 +244,8 @@ def build_database_list():
     servers = {}
     for value in r.json()["value"]:
         if value["name"] != "sysops":
-            servers[value["name"]] = []
-            if "tags" in value:
-                pass # TODO: do something
+            if "tags" in value and "CWQI_environment" in value["tags"].keys() and value["tags"]["CWQI_environment"] == "production":
+                servers[value["name"]] = []
 
     for server in servers:
         headers = {"Authorization": bearer, "Content-Type": "application/json"}
