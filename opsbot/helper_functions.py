@@ -69,7 +69,10 @@ def save_users(user_list):
 
 def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS, offset=0):
     """Find time that a password is good until."""
-    return datetime.now() + timedelta(hours=hours_good) - timedelta(hours=offset)
+    pass_time = datetime.now() + timedelta(hours=hours_good)
+    if offset > 0:
+        pass_time = pass_time - timedelta(hours=offset)
+    return pass_time
 
 
 def friendly_time(time=None):
@@ -201,7 +204,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
                                                                    reason)
 
             # We want the expiration time to look nice.
-            friendly_exp = friendly_time(expiration)
+            friendly_exp = friendly_time()
 
             if not valid:
                 message.reply(Strings["GRANT_EXAMPLE"].format(db["db"], db["db"]))
