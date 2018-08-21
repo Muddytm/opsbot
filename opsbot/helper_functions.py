@@ -125,8 +125,8 @@ def find_channel(channels, user):
         try:
             if channels[x]["user"] == user:
                 return channels[x]["id"]
-            except KeyError:
-                sys.exit(0)
+        except KeyError:
+            sys.exit(0)
     return ""
 
 
