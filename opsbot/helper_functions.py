@@ -10,6 +10,7 @@ import os
 import random
 import re
 from six import iteritems
+import sys
 import time
 
 import opsbot.config as config
@@ -121,8 +122,10 @@ def find_channel(channels, user):
     for x in channels:
         if 'is_member' in channels[x]:
             continue
-        if channels[x]["user"] == user:
+        elif "user" in channels[x] and channels[x]["user"] == user:
             return channels[x]["id"]
+        else:
+            sys.exit(0)
     return ""
 
 
@@ -197,7 +200,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
                                                                    reason)
 
             # We want the expiration time to look nice.
-            friendly_exp = friendly_time(expiration)
+            friendly_exp = friendly_time(expiration) - timedelta(hours=7)
 
             if not valid:
                 message.reply(Strings["GRANT_EXAMPLE"].format(db["db"], db["db"]))
