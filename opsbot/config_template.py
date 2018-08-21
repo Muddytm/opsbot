@@ -45,7 +45,9 @@ NEWRELIC_PASS = ""
 
 
 # Slack channel to listen to and do group replies in (i.e. "company_authbot")
+# Also errors channel
 AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL_ERRORS = ""
 
 # The part that goes after the server name (i.e. ".database.windows.net")
 SERVER_SUFFIX = ""

@@ -21,6 +21,7 @@ import opsbot.helper_functions as hf
 user_path = config.DATA_PATH + 'users.json'
 sql_log_base = config.LOG_PATH
 public_channel = config.AUTH_CHANNEL
+errors_channel = config.AUTH_CHANNEL_ERRORS
 
 notify_flag = False
 
@@ -31,6 +32,18 @@ def load_slack_users(message):
 
     NOTE: USING THIS WILL RESET user.json. Uncomment the @respond_to bit
     if you really want to use this."""
+
+    with open(user_path) as outfile:
+        users = json.load(outfile)
+
+    existing_users = []
+
+    for user in users:
+        if (user["metadata"] != "" or user["approval_level"] != "unapproved"):
+            existing_users.append(user)
+
+    print (existing_users)
+
     user_list = []
     for userid, user in iteritems(message._client.users):
         user_info = {}
@@ -40,6 +53,12 @@ def load_slack_users(message):
         user_info["metadata"] = "" # Metadata to be edited later on
 
         user_list.append(user_info)
+
+    if existing_users:
+        for user in existing_users:
+            for listed_user in user_list:
+                if user["id"] == listed_user["id"]:
+                    user_list[user_list.index(listed_user)] = user
 
     with open(user_path, 'w') as outfile:
         json.dump(user_list, outfile)
@@ -94,35 +113,38 @@ def notify(message):
         for person in info:
             if len(info[person]) == 0:
                 continue
-            users = hf.get_users()
-            for user in users:
-                if user["name"] == person:
-                    dbs = []
-                    servers = []
-                    for grant in info[person]:
-                        dbs.append(grant["db"])
-                        servers.append(grant["server"])
-                    chan = hf.find_channel(message._client.channels, user["id"])
-                    if flag is "hour":
-                        message._client.send_message(chan,
-                                                     Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
-                                                     "" + Strings["NOTIFY_EXPIRE_INFO"])
-                        for db, server in zip(dbs, servers):
-                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db)
-                    elif flag is "tenmins":
-                        message._client.send_message(chan,
-                                                     Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
-                                                     "" + Strings["NOTIFY_EXPIRE_INFO"])
-                        for db, server in zip(dbs, servers):
-                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db)
-                    elif flag is "deleted":
-                        message._client.send_message(chan,
-                                                     Strings['EXPIRE'].format(", ".join(dbs)))
-                        message._client.send_message(public_channel,
-                                                     Strings["EXPIRE_PING"].format(user["name"],
-                                                                                   ", ".join(dbs)))
-                        for db, server in zip(dbs, servers):
-                            logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
+            try:
+                users = hf.get_users()
+                for user in users:
+                    if user["name"] == person:
+                        dbs = []
+                        servers = []
+                        for grant in info[person]:
+                            dbs.append(grant["db"])
+                            servers.append(grant["server"])
+                        chan = hf.find_channel(message._client.channels, user["id"])
+                        if flag is "hour":
+                            message._client.send_message(chan,
+                                                         Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
+                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
+                            for db, server in zip(dbs, servers):
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db)
+                        elif flag is "tenmins":
+                            message._client.send_message(chan,
+                                                         Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
+                                                         "" + Strings["NOTIFY_EXPIRE_INFO"])
+                            for db, server in zip(dbs, servers):
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db)
+                        elif flag is "deleted":
+                            message._client.send_message(chan,
+                                                         Strings['EXPIRE'].format(", ".join(dbs)))
+                            message._client.send_message(public_channel,
+                                                         Strings["EXPIRE_PING"].format(user["name"],
+                                                                                       ", ".join(dbs)))
+                            for db, server in zip(dbs, servers):
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
+            except Exception as e:
+                message._client.send_message(errors_channel, "```{}```".format(e))
 
         time.sleep(5)
 
@@ -354,7 +376,10 @@ def no_reason(message, db):
     """Display error when no reason given trying to 'grant' access, unless
     extending time."""
     #message.reply(Strings['GRANT_EXAMPLE'].format(db))
-    hf.grant(message, db, "[EXTENDING ACCESS TIME]", True)
+    try:
+        hf.grant(message, db, "[EXTENDING ACCESS TIME]", True)
+    except Exception as e:
+        message._client.send_message(errors_channel, "```{}```".format(e))
 
 
 @listen_to('^grantrw (\S*)$')
@@ -362,7 +387,10 @@ def no_reason(message, db):
     """Display error when no reason given trying to 'grantrw' access, unless
     extending time."""
     #message.reply(Strings['GRANT_EXAMPLE'].format(db))
-    hf.grant(message, db, "[EXTENDING ACCESS TIME]", False)
+    try:
+        hf.grant(message, db, "[EXTENDING ACCESS TIME]", False)
+    except Exception as e:
+        message._client.send_message(errors_channel, "```{}```".format(e))
 
 
 @listen_to('^grant (\S*) (.*)')
