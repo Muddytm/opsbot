@@ -67,15 +67,15 @@ def save_users(user_list):
         json.dump(user_list, outfile)
 
 
-def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS):
+def pass_good_until(hours_good=config.HOURS_TO_GRANT_ACCESS, offset=0):
     """Find time that a password is good until."""
-    return datetime.now() + timedelta(hours=hours_good)
+    return datetime.now() + timedelta(hours=hours_good) - timedelta(hours=offset)
 
 
 def friendly_time(time=None):
     """Rerurn the time in a print-friendly format."""
     if time is None:
-        time = pass_good_until()
+        time = pass_good_until(config.HOURS_TO_GRANT_ACCESS, 7)
     return time.strftime(config.TIME_PRINT_FORMAT)
 
 
