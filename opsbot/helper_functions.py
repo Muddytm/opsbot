@@ -122,10 +122,11 @@ def find_channel(channels, user):
     for x in channels:
         if 'is_member' in channels[x]:
             continue
-        elif "user" in channels[x] and channels[x]["user"] == user:
-            return channels[x]["id"]
-        else:
-            sys.exit(0)
+        try:
+            if channels[x]["user"] == user:
+                return channels[x]["id"]
+            except KeyError:
+                sys.exit(0)
     return ""
 
 
