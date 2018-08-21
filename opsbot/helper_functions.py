@@ -201,7 +201,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
                                                                    reason)
 
             # We want the expiration time to look nice.
-            friendly_exp = friendly_time(expiration) - timedelta(hours=7)
+            friendly_exp = friendly_time(expiration)
 
             if not valid:
                 message.reply(Strings["GRANT_EXAMPLE"].format(db["db"], db["db"]))
