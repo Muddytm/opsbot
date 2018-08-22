@@ -125,11 +125,9 @@ def find_channel(channels, user):
     for x in channels:
         if 'is_member' in channels[x]:
             continue
-        try:
-            if channels[x]["user"] == user:
-                return channels[x]["id"]
-        except KeyError:
-            sys.exit(0)
+        if channels[x]["user"] == user:
+            return channels[x]["id"]
+
     return ""
 
 
@@ -139,7 +137,7 @@ def have_channel_open(channels, user):
         chan = channels[x]
         if 'is_member' in chan:
             continue
-        if chan['user'] == user:
+        if "user" in chan and chan['user'] == user:
                 return True
     return False
 
