@@ -29,6 +29,53 @@ for word in wordlist:
     maybe.append(word.strip())
 
 
+def help(message):
+    """The main function for help stuff. Return help text."""
+    users = get_users()
+    hint = "You shouldn't see this message...if you do, bug my creator."
+    for user in users:
+        if user["id"] == message._get_user_id():
+            if user["approval_level"] == "unapproved":
+                hint = ("Looks like you're not approved yet for database access! "
+                        "Message me `approve me` to request approval from the "
+                        "admins.")
+            elif user["approval_level"] == "denied":
+                hint = ("Database access: denied")
+            elif user["approval_level"] == "admin":
+                hint = ("Database access: approved (also, you're an Authbot admin! Go you.)")
+            else:
+                hint = ("Hmm...this message shouldn't appear.")
+            break
+
+    help_text = ("For help on Authbot's functions, type \"help [topic]\", where "
+                 "[topic] is one of the following: ")
+
+    items = []
+    help_strings = get_help_strings()
+    for item in help_strings:
+        items.append(item)
+
+    return ("{}\n\n{}\n\n{}".format(hint, help_text, ", ".join(items)))
+
+
+def get_help_strings():
+    """Return dict of help strings from helpdoc.md."""
+    info = {}
+    header = ""
+    with open("opsbot/helpdoc.md") as f:
+        content = f.readlines()
+
+    for line in content:
+        line = line.strip()
+        if line.startswith("#"):
+            header = line.replace("#", "").strip().lower()
+        elif not line.startswith("#") and line:
+            info[header] = line
+            header = ""
+
+    return info
+
+
 def query_users(message, users, level):
     """Return users of the approval level."""
     user_list = []
@@ -125,7 +172,7 @@ def find_channel(channels, user):
     for x in channels:
         if 'is_member' in channels[x]:
             continue
-        if channels[x]["user"] == user:
+        if "user" in channels[x] and channels[x]["user"] == user:
             return channels[x]["id"]
 
     return ""

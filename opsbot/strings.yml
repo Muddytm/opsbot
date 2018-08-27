@@ -1,6 +1,6 @@
 NONSENSE: ":question: That doesn't make any sense."
 TOO_MANY_PASSWORDS: ":x: I can't generate that many passwords at one time."
-HELP: ":grey_exclamation: Help document for me lives at: {}"
+HELP: ":grey_exclamation: Help document for me lives at:"
 APPROVER_REQUEST: ":grey_exclamation: Sending request to the approvers to have you be approved."
 APPROVER_REQUEST_DETAIL: ':exclamation: <@{}>: Please review this user and approve if appropriate: ```approve {}```'
 APPROVE_ME_REQUEST: ':question: Request approval by sending me the request via direct message: `approve me`.'

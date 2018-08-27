@@ -33,6 +33,14 @@ def load_slack_users(message):
     NOTE: USING THIS WILL RESET user.json. Uncomment the @respond_to bit
     if you really want to use this."""
 
+    users = get_users()
+
+    for user in users:
+        if user["id"] == message._get_user_id():
+            if user["approval_level"] != "admin":
+                message.reply("Insufficient privileges.")
+                return
+
     with open(user_path) as outfile:
         users = json.load(outfile)
 
@@ -210,12 +218,19 @@ def pass_multi_request(message, num_words=1):
         message.reply("```" + hf.generate_password() + "```")
 
 
-@respond_to('help', re.IGNORECASE)
-@listen_to('help', re.IGNORECASE)
-def channel_help(message):
-    """Reply with the link to the help doc url."""
-    message.reply(Strings['HELP'].format(config.HELP_URL))
+@respond_to("help", re.IGNORECASE)
+def channel_help_respond(message):
+    """Reply with help."""
+    help_string = "```{}```".format(hf.help(message))
+    message.reply(help_string)
 
+
+@listen_to("help", re.IGNORECASE)
+def channel_help_listen(message):
+    """Reply with help."""
+    help_string = "```{}```".format(hf.help(message))
+    chan = hf.find_channel(message._client.channels, message._get_user_id())
+    message._client.send_message(chan, help_string)
 
 @respond_to('^approve me$', re.IGNORECASE)
 def approve_me(message):
