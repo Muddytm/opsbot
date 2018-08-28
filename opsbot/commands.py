@@ -218,19 +218,28 @@ def pass_multi_request(message, num_words=1):
         message.reply("```" + hf.generate_password() + "```")
 
 
-@respond_to("help", re.IGNORECASE)
+@respond_to("^help$", re.IGNORECASE)
 def channel_help_respond(message):
     """Reply with help."""
     help_string = "```{}```".format(hf.help(message))
     message.reply(help_string)
 
 
-@listen_to("help", re.IGNORECASE)
+@listen_to("^help$", re.IGNORECASE)
 def channel_help_listen(message):
     """Reply with help."""
     help_string = "```{}```".format(hf.help(message))
     chan = hf.find_channel(message._client.channels, message._get_user_id())
     message._client.send_message(chan, help_string)
+
+
+@respond_to("help (.*)", re.IGNORECASE)
+def channel_help_item(message, query):
+    """Reply with help for the specific item."""
+    query = query.lower()
+    help_string = hf.help_item(query)
+    message.reply(help_string)
+
 
 @respond_to('^approve me$', re.IGNORECASE)
 def approve_me(message):

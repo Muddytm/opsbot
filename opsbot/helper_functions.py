@@ -58,6 +58,16 @@ def help(message):
     return ("{}\n\n{}\n\n{}".format(hint, help_text, ", ".join(items)))
 
 
+def help_item(query):
+    """Return information for the query (help item)."""
+    help_strings = get_help_strings()
+    for item in help_strings:
+        if query in item.lower():
+            return ("```{}:\n\n{}```".format(item.upper(), help_strings[item]))
+
+    return "Nothing like that was found in my help document."
+
+
 def get_help_strings():
     """Return dict of help strings from helpdoc.md."""
     info = {}
