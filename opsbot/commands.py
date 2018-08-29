@@ -33,7 +33,7 @@ def load_slack_users(message):
     NOTE: USING THIS WILL RESET user.json. Uncomment the @respond_to bit
     if you really want to use this."""
 
-    users = get_users()
+    users = hf.get_users()
 
     for user in users:
         if user["id"] == message._get_user_id():
