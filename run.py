@@ -4,6 +4,7 @@ Set up the slack bot and any surrounding work needed to create SQL
 access for users.
 """
 
+import json
 import opsbot.customlogging as logging
 import os
 import threading
@@ -33,6 +34,21 @@ def main():
 
     if not os.path.isdir("userdata"):
         os.makedirs("userdata")
+
+    if not os.path.isfile("data/users.json"):
+        with open("data/users.json", "w") as outfile:
+            data = {}
+            json.dump(data, outfile)
+
+    if not os.path.isfile("slackbot_settings.py"):
+        print ("Config file \"slackbot_settings.py\" not found. Please set it "
+               "up and try again.")
+        exit()
+
+    if not os.path.isfile("opsbot/config.py"):
+        print ("Config file \"config.py\" not found in /opsbot. Please set it "
+               "up and try again.")
+        exit()
 
     db_list_task = opsbot.tasks.DBList()
     db_list_task.thread_work_timer = config.CHECK_DATABASE_INTERVAL
