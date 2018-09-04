@@ -11,6 +11,7 @@ installation should be set in environment variables. Setting them there
 prevent accidentally pushing those settings to source control and can be easily
 changed in a per-installation basis without changing any files.
 
+Save this as config.py when you're ready to use it.
 """
 
 import os
@@ -22,21 +23,37 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = os.getenv('AZURE_SQL_USER')
-AZURE_PASSWORD = os.getenv('AZURE_SQL_PASS')
-AZURE_DSN = os.getenv('AZURE_SQL_DSN')
+AZURE_USER = "" #os.getenv('AZURE_SQL_USER')
+AZURE_PASSWORD = "" #os.getenv('AZURE_SQL_PASS')
+AZURE_DSN = "" #os.getenv('AZURE_SQL_DSN')
+RESOURCE_GROUP = ""
 
-# This env variable should be a comma separated list of SQL servers to pull
-# from. Something like:
-# AZURE_SQL_SERVERS=server1,server2,server3
+# Stuff for Azure app registration
+TENANT_ID = ""
+SUB_ID = ""
+CLIENT_ID = ""
+CLIENT_SECRET = ""
 
-AZURE_SQL_SERVERS = os.getenv('AZURE_SQL_SERVERS', '').split(',')
+# For Sumologic
+SUMOLOGIC_ENDPOINT = ""
 
-# Slack channel to listen to and do group replies in:
-AUTH_CHANNEL = os.getenv('AUTH_SLACK_CHANNEL')
+# For New Relic
+NEWRELIC_ACC_ID = ""
+NEWRELIC_APP_ID = ""
+NEWRELIC_USER = ""
+NEWRELIC_PASS = ""
+
+
+# Slack channel to listen to and do group replies in (i.e. "company_authbot")
+# Also errors channel
+AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL_ERRORS = ""
+
+# The part that goes after the server name (i.e. ".database.windows.net")
+SERVER_SUFFIX = ""
 
 # URL of a help document:
-HELP_URL = os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
+HELP_URL = "https://isitchristmas.com/" #os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
 
 # Logging level. (10 = DEBUG, 20 = INFO, 30 = WARNING)
 LOGGING_LEVEL = int(os.getenv('AUTH_LOGGING_LEVEL', 30))
@@ -61,6 +78,12 @@ WORDPATH = DATA_PATH + 'wordlist.txt'
 # How many hours is a generated account good for?
 HOURS_TO_GRANT_ACCESS = 4
 
+# Hour threshold for notification
+NOTIFICATION_THRESHOLD_HOUR = 60
+
+# Ten minute threshold for notification
+NOTIFICATION_THRESHOLD_TENMINS = 10
+
 # When sent to the slack channel, this is the printed format:
 # '%b-%d %I:%M%p' looks like 'Feb-08 02:41PM'
 TIME_PRINT_FORMAT = '%b-%d %I:%M%p'
@@ -77,7 +100,13 @@ PASSWORD_FORMAT = "*#*!*"
 PASSWORD_SYMBOLS = "@$%^&(){}<>-+="
 
 # How often (in seconds) to get a new list of databases:
-CHECK_DATABASE_INTERVAL = 3600
+CHECK_DATABASE_INTERVAL = 1800
+
+# How often (in seconds) to check for expired users
+DELETE_USER_INTERVAL = 60
+
+# How often (in seconds) to get a new list of servers:
+CHECK_SERVER_INTERVAL = 3600
 
 # How often a given thread should check for work and/or stop signals, in sec.
 # Smaller numbers = more checks, but faster timing to things like quit signals.

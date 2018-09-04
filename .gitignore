@@ -1,4 +1,10 @@
-people.json
+test.py
+userdata/*.json
+opsbot/config.py
+data/*.json
+user_logs/*.csv
+log/*.csv
+slackbot_settings.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
