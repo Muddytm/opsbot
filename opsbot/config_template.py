@@ -25,8 +25,8 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 # a text file.
 AZURE_USER = "" #os.getenv('AZURE_SQL_USER')
 AZURE_PASSWORD = "" #os.getenv('AZURE_SQL_PASS')
-AZURE_DSN = "" #os.getenv('AZURE_SQL_DSN')
-RESOURCE_GROUP = ""
+AZURE_DSNS = [] #os.getenv('AZURE_SQL_DSN')
+RESOURCE_GROUPS = []
 
 # Stuff for Azure app registration
 TENANT_ID = ""

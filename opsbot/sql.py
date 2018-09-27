@@ -244,17 +244,18 @@ def build_database_list():
     servers = {}
     for value in r.json()["value"]:
         if value["name"] != "sysops":
-            if "tags" in value and "CWQI_environment" in value["tags"].keys() and value["tags"]["CWQI_environment"] == "production":
-                servers[value["name"]] = []
+            #if "tags" in value and "CWQI_environment" in value["tags"].keys() and value["tags"]["CWQI_environment"] == "production":
+            servers[value["name"]] = []
 
     for server in servers:
-        headers = {"Authorization": bearer, "Content-Type": "application/json"}
-        r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, config.RESOURCE_GROUP, server),
-                         headers=headers)
+        for group in config.RESOURCE_GROUPS:
+            headers = {"Authorization": bearer, "Content-Type": "application/json"}
+            r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, group, server),
+                             headers=headers)
 
-        for value in r.json()["value"]:
-            if value["name"] != "master":
-                servers[server].append(value["name"])
+            for value in r.json()["value"]:
+                if value["name"] != "master":
+                    servers[server].append(value["name"])
 
     with open("data/databases.json", 'w') as outfile:
         json.dump(servers, outfile)
