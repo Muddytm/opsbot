@@ -35,6 +35,9 @@ def main():
     if not os.path.isdir("userdata"):
         os.makedirs("userdata")
 
+    if not os.path.isdir("log"):
+        os.makedirs("log")
+
     if not os.path.isfile("data/users.json"):
         with open("data/users.json", "w") as outfile:
             data = {}

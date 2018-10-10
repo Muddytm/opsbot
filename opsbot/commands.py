@@ -50,7 +50,7 @@ def load_slack_users(message):
         if (user["metadata"] != "" or user["approval_level"] != "unapproved"):
             existing_users.append(user)
 
-    print (existing_users)
+    #print (existing_users)
 
     user_list = []
     for userid, user in iteritems(message._client.users):
