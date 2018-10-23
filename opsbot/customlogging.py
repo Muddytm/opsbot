@@ -1,6 +1,6 @@
 """A custom logging commands script that can write and return logs."""
 
-import opsbot.config as config
+import config as config
 from datetime import datetime
 import json
 import os

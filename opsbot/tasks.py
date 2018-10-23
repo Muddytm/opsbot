@@ -3,7 +3,7 @@ import logging
 import threading
 import time
 
-import opsbot.config as config
+import config as config
 import opsbot.sql as sql
 
 
