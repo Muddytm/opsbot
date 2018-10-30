@@ -43,6 +43,10 @@ def main():
             data = {}
             json.dump(data, outfile)
 
+    if not os.path.isfile("data/events.log"):
+        file = open("data/events.log", "w")
+        file.close()
+
     if not os.path.isfile("slackbot_settings.py"):
         print ("Config file \"slackbot_settings.py\" not found. Please set it "
                "up and try again.")

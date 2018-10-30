@@ -28,6 +28,11 @@ def info(message, server=None, database=None):
 
     file = "{}{}".format(sql_log_base, filename)
     print ("message written to {}".format(filename))
-    with open(file) as f:
-        r = requests.post(config.SUMOLOGIC_ENDPOINT, data={"file": f})
-        print (r)
+
+    if config.SUMOLOGIC_ENDPOINT:
+        with open(file) as f:
+            r = requests.post(config.SUMOLOGIC_ENDPOINT, data={"file": f})
+            print (r)
+
+    with open("log/events.log", "a") as f:
+        f.write(message)
