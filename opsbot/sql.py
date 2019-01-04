@@ -268,7 +268,7 @@ def build_database_list():
 
     for cluster in clusters:
         servers[cluster] = []
-        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", cluster, config.SQL_USER, config.SQL_PASSWORD)
+        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", cluster, config.TEMP_USER, config.TEMP_PASSWORD)
         try:
             connection = pyodbc.connect(conn_string)
             cursor = connection.execute(sql)
