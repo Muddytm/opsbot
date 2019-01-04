@@ -26,11 +26,11 @@ notify_tenmins = config.NOTIFICATION_THRESHOLD_TENMINS
 def execute_sql(sql, server, database=None, get_rows=False):
     """Execute a SQL statement."""
 
-    if server = "mcgintsql01":
+    if server == "mcgintsql01":
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
         server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
-    elif server = "SQLCLUSTER02":
+    elif server == "SQLCLUSTER02":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
         server = config.SQL_SERVER # TODO: replace
