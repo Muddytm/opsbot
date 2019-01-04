@@ -254,14 +254,13 @@ def build_database_list():
 
     for server in servers:
         for group in config.RESOURCE_GROUPS:
-            if group == "mcgintsql01":
-                headers = {"Authorization": bearer, "Content-Type": "application/json"}
-                r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, group, server),
-                                 headers=headers)
+            headers = {"Authorization": bearer, "Content-Type": "application/json"}
+            r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, group, server),
+                             headers=headers)
 
-                for value in r.json()["value"]:
-                    if value["name"] != "master":
-                        servers[server].append(value["name"])
+            for value in r.json()["value"]:
+                if value["name"] != "master":
+                    servers[server].append(value["name"])
 
     # Adding cluster databases to the list.
     clusters = ["SQLCLUSTER02"] #, "SQLCLUSTER01"]
