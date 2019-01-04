@@ -1,6 +1,9 @@
 """A custom logging commands script that can write and return logs."""
 
-import config as config
+try:
+    import opsbot.config as config
+except ModuleNotFoundError:
+    import config
 from datetime import datetime
 import json
 import os
