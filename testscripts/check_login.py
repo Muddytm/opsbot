@@ -7,7 +7,9 @@ import pyodbc
 #sql = "SELECT object_name ,counter_name, cntr_value\nFROM sys.dm_os_performance_counters\nWHERE counter_name = 'Target Server Memory (KB)'"
 sql = "select name FROM sys.databases;"
 
-conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", config.SQL_SERVER, config.TEST_USER, config.TEST_PASSWORD)
+conn_string = "DRIVER={};SERVER={};UID={};PWD={};Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;".format("{ODBC Driver 17 for SQL Server}", config.SQL_SERVER, config.SQL_USER, config.SQL_PASSWORD + ".")
+
+print (conn_string)
 
 try:
     connection = pyodbc.connect(conn_string)

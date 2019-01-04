@@ -45,7 +45,7 @@ def execute_sql(sql, server, database=None, get_rows=False):
     #conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
     conn_string = ("Driver={{ODBC Driver 17 for SQL Server}};Server={}" +
                    ",1433;{}Uid={};Pwd={};" +
-                   "Encrypt=yes;TrustServerCertificate=no;Connection " +
+                   "Encrypt=yes;TrustServerCertificate=yes;Connection " +
                    "Timeout=30;").format(server, db, user, password)
     #print (conn_string)
     #print (sql)
@@ -268,7 +268,7 @@ def build_database_list():
 
     for cluster in clusters:
         servers[cluster] = []
-        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", cluster, config.TEMP_USER, config.TEMP_PASSWORD)
+        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", config.SQL_SERVER, config.SQL_USER, config.SQL_PASSWORD)
         try:
             connection = pyodbc.connect(conn_string)
             cursor = connection.execute(sql)
