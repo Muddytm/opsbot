@@ -25,11 +25,16 @@ notify_tenmins = config.NOTIFICATION_THRESHOLD_TENMINS
 
 def execute_sql(sql, server, database=None, get_rows=False):
     """Execute a SQL statement."""
-    #sql = "DROP LOGIN [caleb.hawkins]"
-    #server = "mcgintsql01"
-    user = config.AZURE_USER + "@" + server
-    password = config.AZURE_PASSWORD
-    dsn = server #config.AZURE_DSN
+
+    if server = "mcgintsql01":
+        user = config.AZURE_USER + "@" + server
+        password = config.AZURE_PASSWORD
+        server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
+    elif server = "SQLCLUSTER02":
+        user = config.SQL_USER
+        password = config.SQL_PASSWORD # TODO: replace in config
+        server = config.SQL_SERVER # TODO: replace
+
     db = ''
     rows = []
     if database:
@@ -38,8 +43,8 @@ def execute_sql(sql, server, database=None, get_rows=False):
         db = ""
 
     #conn_string = 'DSN={};UID={};PWD={};{}'.format(dsn, user, password, db)
-    conn_string = ("Driver={{ODBC Driver 17 for SQL Server}};Server=tcp:{}." +
-                   "database.windows.net,1433;{}Uid={};Pwd={};" +
+    conn_string = ("Driver={{ODBC Driver 17 for SQL Server}};Server={}" +
+                   ",1433;{}Uid={};Pwd={};" +
                    "Encrypt=yes;TrustServerCertificate=no;Connection " +
                    "Timeout=30;").format(server, db, user, password)
     #print (conn_string)
@@ -256,6 +261,27 @@ def build_database_list():
             for value in r.json()["value"]:
                 if value["name"] != "master":
                     servers[server].append(value["name"])
+
+    # Adding cluster databases to the list.
+    clusters = ["SQLCLUSTER02"] #, "SQLCLUSTER01"]
+    sql = "SELECT name FROM sys.databases"
+
+    for cluster in clusters:
+        servers[cluster] = []
+        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", cluster, config.SQL_USER. config.SQL_PASSWORD)
+        try:
+            connection = pyodbc.connect(conn_string)
+            cursor = connection.execute(sql)
+            rows = cursor.fetchall()
+            connection.commit()
+            connection.close()
+
+            banned = ["master", "tempdb", "model", "msdb", "3Mtest", "3Mtest2"]
+            for row in rows:
+                if row[0] not in banned:
+                    servers[cluster].append(row[0])
+        except pyodbc.ProgrammingError as e:
+            print ("Could not log in to {}: {}".format(cluster, e))
 
     with open("data/databases.json", 'w') as outfile:
         json.dump(servers, outfile)

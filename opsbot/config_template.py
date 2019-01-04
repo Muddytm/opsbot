@@ -11,7 +11,6 @@ installation should be set in environment variables. Setting them there
 prevent accidentally pushing those settings to source control and can be easily
 changed in a per-installation basis without changing any files.
 
-Save this as config.py when you're ready to use it.
 """
 
 import os
@@ -23,34 +22,31 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = "" #os.getenv('AZURE_SQL_USER')
-AZURE_PASSWORD = "" #os.getenv('AZURE_SQL_PASS')
-AZURE_DSNS = [] #os.getenv('AZURE_SQL_DSN')
-RESOURCE_GROUPS = []
-
-# Stuff for Azure app registration
+AZURE_USER = ""
+AZURE_PASSWORD = ""
 TENANT_ID = ""
 SUB_ID = ""
 CLIENT_ID = ""
 CLIENT_SECRET = ""
+RESOURCE_GROUPS = []
 
-# For Sumologic
+SQL_USER = ""
+SQL_PASSWORD = ""
+SQL_SERVER = ""
+
 SUMOLOGIC_ENDPOINT = ""
-
-# For New Relic
 NEWRELIC_ACC_ID = ""
 NEWRELIC_APP_ID = ""
 NEWRELIC_USER = ""
 NEWRELIC_PASS = ""
 
 
-# Slack channel to listen to and do group replies in (i.e. "company_authbot")
-# Also errors channel
+# Slack channel to listen to and do group replies in:
 AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
 AUTH_CHANNEL_ERRORS = ""
 
-# The part that goes after the server name (i.e. ".database.windows.net")
-SERVER_SUFFIX = ""
+# The part that goes after the server name
+SERVER_SUFFIX = ".database.windows.net"
 
 # URL of a help document:
 HELP_URL = "https://isitchristmas.com/" #os.getenv('SLACK_HELP_URL', 'HELP_URL env variable not set.')
