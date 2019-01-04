@@ -13,7 +13,7 @@ from slackbot.bot import listen_to
 from slackbot.bot import respond_to
 import time
 
-import config as config
+import opsbot.config as config
 import opsbot.sql as sql
 from opsbot.strings import Strings
 import opsbot.helper_functions as hf

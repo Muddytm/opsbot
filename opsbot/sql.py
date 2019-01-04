@@ -13,7 +13,7 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
-import config as config
+import opsbot.config as config
 
 active_sql = config.DATA_PATH + 'active_sql.json'
 # active_databases = config.DATA_PATH + 'active_dbs.json'

@@ -13,7 +13,7 @@ from six import iteritems
 import sys
 import time
 
-import config as config
+import opsbot.config as config
 import opsbot.sql as sql
 from opsbot.strings import Strings
 
