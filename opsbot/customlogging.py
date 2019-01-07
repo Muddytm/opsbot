@@ -18,24 +18,20 @@ def info(message, server=None, database=None):
     message = (server + " database=" + database + " user=" + message)
     message = ("time=" + str(datetime.today()) + " server=" + message)
 
-    #filename = datetime.today().strftime("%m-%Y.csv")
-    filename = "temp.csv"
-    # if os.path.exists('{}{}'.format(sql_log_base, filename)):
-    #     fd = open('{}{}'.format(sql_log_base, filename), 'a')
-    # else:
-    #     fd = open('{}{}'.format(sql_log_base, filename), "w+")
-    fd = open('{}{}'.format(sql_log_base, filename), "w+")
+    #filename = "temp.csv"
 
-    fd.write(message)
-    fd.close()
+    #fd = open('{}{}'.format(sql_log_base, filename), "w+")
 
-    file = "{}{}".format(sql_log_base, filename)
-    print ("message written to {}".format(filename))
+    #fd.write(message)
+    #fd.close()
+
+    #file = "{}{}".format(sql_log_base, filename)
+    #print ("message written to {}".format(filename))
 
     if config.SUMOLOGIC_ENDPOINT:
-        with open(file) as f:
-            r = requests.post(config.SUMOLOGIC_ENDPOINT, data={"file": f})
-            print (r)
+        #with open(file) as f:
+        r = requests.post(config.SUMOLOGIC_ENDPOINT, data=message)
+        print (r)
 
     with open("log/events.log", "a") as f:
         f.write(message)
