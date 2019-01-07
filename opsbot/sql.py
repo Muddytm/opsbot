@@ -108,7 +108,7 @@ def delete_sql_user(user, server, database):
     betterprint("Deleting {} from server {} and db {}".format(user, server, database))
     #if not sql_user_exists(user, server, database):
     #    return
-    sql = "DROP USER IF EXISTS [{}]".format(user)
+    sql = "DROP USER [{}]".format(user)
     #print ("lets delete it now")
     try:
         execute_sql(sql, server, database)
