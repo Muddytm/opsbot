@@ -23,6 +23,14 @@ notify_hour = config.NOTIFICATION_THRESHOLD_HOUR
 notify_tenmins = config.NOTIFICATION_THRESHOLD_TENMINS
 
 
+def betterprint(text):
+    """Print only if there is a console to print to."""
+    try:
+        print(text)
+    except OSError as e:
+        pass
+
+
 def execute_sql(sql, server, database=None, get_rows=False):
     """Execute a SQL statement."""
 
@@ -60,15 +68,15 @@ def execute_sql(sql, server, database=None, get_rows=False):
                 rows = cursor.fetchall()
             break
         except pyodbc.InterfaceError as e:
-            print ("Login failed. Reason: {}".format(e))
+            betterprint("Login failed. Reason: {}".format(e))
             break
         except pyodbc.OperationalError as e:
             if count < 2:
-                print ("Timed out...trying again. Reason: {}".format(e))
+                betterprint("Timed out...trying again. Reason: {}".format(e))
             else:
-                print ("Timed out for the third time, I'm outta here.")
+                betterprint("Timed out for the third time, I'm outta here.")
         except pyodbc.ProgrammingError as e:
-            print ("Cannot access this server: {}".format(e))
+            betterprint("Cannot access this server: {}".format(e))
             break
 
         count += 1
@@ -97,14 +105,14 @@ def execute_sql_count(sql, server, database=None):
 
 def delete_sql_user(user, server, database):
     """Delete a SQL user."""
-    print ("Deleting {} from server {} and db {}".format(user, server, database))
+    betterprint("Deleting {} from server {} and db {}".format(user, server, database))
     #if not sql_user_exists(user, server, database):
     #    return
     sql = "DROP USER IF EXISTS [{}]".format(user)
     #print ("lets delete it now")
     try:
         execute_sql(sql, server, database)
-        print ("SQL: " + sql)
+        betterprint("SQL: " + sql)
         return True
     except:
         return False
@@ -117,7 +125,7 @@ def delete_sql_login(user, server):
     sql = "DROP LOGIN [{}]".format(user)
     try:
         execute_sql(sql, server)
-        print ("SQL: " + sql)
+        betterprint("SQL: " + sql)
         return True
     except:
         return False
@@ -170,11 +178,12 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
             databases = json.load(data_file)
         for serv in databases:
             sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
-            print ("SQL: " + sql)
+            betterprint("SQL: " + sql)
+
             try:
                 execute_sql(sql, serv)
             except pyodbc.InterfaceError as e:
-                print ("Login failed :(")
+                betterprint("Login failed :(")
         created_login = True
 
     # If user does not have access to this database yet, give access
@@ -193,7 +202,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
             return False, False, False
         sql = "CREATE USER [{}] FROM LOGIN [{}]".format(user, user)
         execute_sql(sql, server, database)
-        print ("SQL: " + sql)
+        betterprint("SQL: " + sql)
         userdata["access"].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
     # Get this granted instance and set expiration time to 4 hours from now
@@ -211,7 +220,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         rights = 'readwrite'
         sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
         execute_sql(sql, server, database)
-        print ("SQL: " + sql)
+        betterprint("SQL: " + sql)
 
     log = '{} reason=\"{}\" rights={}\n'.format(user,
                                                 reason,
@@ -282,7 +291,7 @@ def build_database_list():
                 if row[0] not in banned:
                     servers[cluster].append(row[0])
         except pyodbc.ProgrammingError as e:
-            print ("Could not log in to {}: {}".format(cluster, e))
+            betterprint("Could not log in to {}: {}".format(cluster, e))
 
     with open("data/databases.json", 'w') as outfile:
         json.dump(servers, outfile)
