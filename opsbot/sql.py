@@ -205,7 +205,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         betterprint("SQL: " + sql)
         userdata["access"].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
-        logging.info("{} reason=[CREATING LOGIN]", server, database, "createlogin")
+        logging.info("{} reason=[CREATING LOGIN]".format(user), server, database, "createlogin")
     # Get this granted instance and set expiration time to 4 hours from now
     elif found:
         userdata["access"][loc]["expiration"] = expire.isoformat()
