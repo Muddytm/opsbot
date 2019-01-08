@@ -179,6 +179,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         for serv in databases:
             sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
             betterprint("SQL: " + sql)
+            logging.info("{} reason=[CREATING LOGIN]".format(user), server, "[NONE]", "createlogin")
 
             try:
                 execute_sql(sql, serv)
@@ -205,7 +206,6 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         betterprint("SQL: " + sql)
         userdata["access"].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
-        logging.info("{} reason=[CREATING LOGIN]".format(user), server, database, "createlogin")
     # Get this granted instance and set expiration time to 4 hours from now
     elif found:
         userdata["access"][loc]["expiration"] = expire.isoformat()
