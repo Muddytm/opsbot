@@ -218,6 +218,7 @@ def pass_multi_request(message, num_words=1):
         message.reply("```" + hf.generate_password() + "```")
 
 
+@listen_to("^help$", re.IGNORECASE)
 @respond_to("^help$", re.IGNORECASE)
 def channel_help_respond(message):
     """Reply with help."""
@@ -225,14 +226,15 @@ def channel_help_respond(message):
     message.reply(help_string)
 
 
-@listen_to("^help$", re.IGNORECASE)
-def channel_help_listen(message):
-    """Reply with help."""
-    help_string = "```{}```".format(hf.help(message))
-    chan = hf.find_channel(message._client.channels, message._get_user_id())
-    message._client.send_message(chan, help_string)
+#@listen_to("^help$", re.IGNORECASE)
+#def channel_help_listen(message):
+#    """Reply with help."""
+#    help_string = "```{}```".format(hf.help(message))
+#    chan = hf.find_channel(message._client.channels, message._get_user_id())
+#    message._client.send_message(chan, help_string)
 
 
+@listen_to("help (.*)", re.IGNORECASE)
 @respond_to("help (.*)", re.IGNORECASE)
 def channel_help_item(message, query):
     """Reply with help for the specific item."""

@@ -48,7 +48,7 @@ def help(message):
             break
 
     help_text = ("For help on Authbot's functions, type \"help [topic]\", where "
-                 "[topic] is one of the following: ")
+                 "[topic] is one of (or part of) the following phrases: ")
 
     items = []
     help_strings = get_help_strings()
@@ -309,8 +309,8 @@ def grant(message, db, reason, readonly):
     """Master function for the grant commands.
 
     Supports wildcards of pretty much any variation."""
-    if ((db.endswith("*") and len(db[:-1]) < 4) or
-       (db.startswith("*") and len(db[1:]) < 4) or
+    if ((db.endswith("*") and len(db[:-1]) < 3) or
+       (db.startswith("*") and len(db[1:]) < 3) or
        (db == "*")):
         message.reply(Strings["DANGER"])
     elif ((not db.endswith("*")) and (not db.startswith("*")) and
