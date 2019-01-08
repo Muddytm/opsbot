@@ -286,9 +286,9 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
 
         # Give password or tell user to use the one they've received already
         if login_created:
-            message._client.send_message(chan, Strings["PASSWORD_CREATED"].format(password))
+            message._client.send_message(chan, Strings["PASSWORD_CREATED"].format(password, "".join(requested_dbs)))
         elif (granted_msg != "" or extended_msg != ""):
-            message._client.send_message(chan, Strings["PASSWORD_REUSED"])
+            message._client.send_message(chan, Strings["PASSWORD_REUSED"].format("".join(requested_dbs)))
 
         if (granted_msg != "" or extended_msg != ""):
             slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)

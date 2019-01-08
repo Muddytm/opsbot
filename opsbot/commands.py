@@ -136,13 +136,13 @@ def notify(message):
                                                          Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
                                                          "" + Strings["NOTIFY_EXPIRE_INFO"])
                             for db, server in zip(dbs, servers):
-                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db)
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN AN HOUR]\n".format(user["name"]), server, db, "notifyhour")
                         elif flag is "tenmins":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_TENMINS'].format(", ".join(dbs)) + "\n"
                                                          "" + Strings["NOTIFY_EXPIRE_INFO"])
                             for db, server in zip(dbs, servers):
-                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db)
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING IN TEN MINUTES]\n".format(user["name"]), server, db, "notifyten")
                         elif flag is "deleted":
                             message._client.send_message(chan,
                                                          Strings['EXPIRE'].format(", ".join(dbs)))
@@ -150,7 +150,7 @@ def notify(message):
                                                          Strings["EXPIRE_PING"].format(user["name"],
                                                                                        ", ".join(dbs)))
                             for db, server in zip(dbs, servers):
-                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db)
+                                logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db, "notifyexpire")
             except Exception as e:
                 message._client.send_message(errors_channel, "```{}```".format(e))
 

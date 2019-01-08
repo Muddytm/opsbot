@@ -11,12 +11,13 @@ import requests
 
 sql_log_base = config.LOG_PATH
 
-def info(message, server=None, database=None):
+def info(message, server=None, database=None, action="other"):
     """Logs the message at this time and writes it to the correct log."""
     if not server and not database:
         return
     message = (server + " database=" + database + " user=" + message)
     message = ("time=" + str(datetime.today()) + " server=" + message)
+    message = (message + " action=" + action)
 
     #filename = "temp.csv"
 

@@ -205,6 +205,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         betterprint("SQL: " + sql)
         userdata["access"].append({"server": server, "db": database, "expiration": expire.isoformat()})
         created_user = True
+        logging.info("{} reason=[CREATING LOGIN]", server, database, "createlogin")
     # Get this granted instance and set expiration time to 4 hours from now
     elif found:
         userdata["access"][loc]["expiration"] = expire.isoformat()
@@ -215,9 +216,12 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
 
     # If readwrite, upgrade. Never downgrade
     rights = "readonly"
+    roles = ['db_datareader']
     if not readonly:
-        role = 'db_datawriter'
         rights = 'readwrite'
+        roles = ['db_datawriter', 'db_datareader']
+
+    for role in roles:
         sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
         execute_sql(sql, server, database)
         betterprint("SQL: " + sql)
@@ -225,7 +229,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
     log = '{} reason=\"{}\" rights={}\n'.format(user,
                                                 reason,
                                                 rights)
-    logging.info(log, server, database)
+    logging.info(log, server, database, "createuser")
     return created_user, created_login, True
 
 
@@ -286,7 +290,7 @@ def build_database_list():
             connection.commit()
             connection.close()
 
-            banned = ["master", "tempdb", "model", "msdb", "3Mtest", "3Mtest2"]
+            banned = ["master", "tempdb", "model", "msdb"]
             for row in rows:
                 if row[0] not in banned:
                     servers[cluster].append(row[0])
@@ -323,7 +327,7 @@ def delete_expired_users():
                 if data in userdata["notifications"]["deleted"]:
                     success = delete_sql_user(name, server, db)
                     if success:
-                        logging.info("{} reason=[USER REMOVED SUCCESSFULLY]\n".format(name), server, db)
+                        logging.info("{} reason=[USER REMOVED SUCCESSFULLY]\n".format(name), server, db, "removeuser")
                         del userdata["access"][i]
                         if data in userdata["notifications"]["deleted"]:
                             userdata["notifications"]["deleted"].remove(data)
@@ -333,7 +337,7 @@ def delete_expired_users():
                             userdata["notifications"]["hour"].remove(data)
                         changed = True
                     else:
-                        logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db)
+                        logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
 
         # If list is empty, we delete logins
         if not userdata["access"] and changed:
@@ -342,10 +346,10 @@ def delete_expired_users():
             for server in databases:
                 success = delete_sql_login(name, server)
                 if success:
-                    logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]")
+                    logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
                     changed = True
                 else:
-                    logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]")
+                    logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
         if changed:
             with open("userdata/{}".format(filename), 'w') as outfile:
