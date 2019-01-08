@@ -226,9 +226,13 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         execute_sql(sql, server, database)
         betterprint("SQL: " + sql)
 
-    log = '{} reason=\"{}\" rights={}\n'.format(user,
-                                                reason,
-                                                rights)
+    # Put reason in quotes if it's user-made
+    if not reason.startswith("[") and not reason.endswith("]"):
+        reason = "\"{}\"".format(reason)
+
+    log = '{} reason={} rights={}\n'.format(user,
+                                            reason,
+                                            rights)
     logging.info(log, server, database, "createuser")
     return created_user, created_login, True
 
