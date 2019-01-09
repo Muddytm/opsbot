@@ -11,6 +11,15 @@ import requests
 
 sql_log_base = config.LOG_PATH
 
+
+def betterprint(text):
+    """Print only if there is a console to print to."""
+    try:
+        print(text)
+    except OSError as e:
+        pass
+
+
 def info(message, server=None, database=None, action="other"):
     """Logs the message at this time and writes it to the correct log."""
     if not server and not database:
@@ -32,7 +41,7 @@ def info(message, server=None, database=None, action="other"):
     if config.SUMOLOGIC_ENDPOINT:
         #with open(file) as f:
         r = requests.post(config.SUMOLOGIC_ENDPOINT, data=message)
-        print (r)
+        betterprint(r)
 
     with open("log/events.log", "a") as f:
         f.write(message)

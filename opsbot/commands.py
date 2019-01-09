@@ -189,7 +189,7 @@ def channels(message):
         if 'is_member' in channel:
             message.reply("{} ({})".format(channel['name'], channel['id']))
         elif 'is_im' in channel:
-            print(channel)
+            #print(channel)
             friendlyname = channel['user']
             try:
                 friendlyname = channel['user']["name"]
