@@ -38,7 +38,7 @@ def execute_sql(sql, server, database=None, get_rows=False):
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
         server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
-    elif server == "SQLCLUSTER02":
+    elif server == "SQLCLUSTER02" or server == "SQLCLUSTER01":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
         server = config.SQL_SERVER # TODO: replace
@@ -281,7 +281,7 @@ def build_database_list():
     #                 servers[server].append(value["name"])
 
     # Adding cluster databases to the list.
-    clusters = ["SQLCLUSTER02"] #, "SQLCLUSTER01"]
+    clusters = ["SQLCLUSTER02", "SQLCLUSTER01"]
     sql = "SELECT name FROM sys.databases"
 
     for cluster in clusters:
@@ -294,7 +294,7 @@ def build_database_list():
             connection.commit()
             connection.close()
 
-            banned = ["master", "tempdb", "model", "msdb"]
+            banned = ["master"]
             for row in rows:
                 if row[0] not in banned:
                     servers[cluster].append(row[0])
