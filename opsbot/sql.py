@@ -38,10 +38,14 @@ def execute_sql(sql, server, database=None, get_rows=False):
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
         server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
-    elif server == "SQLCLUSTER02" or server == "SQLCLUSTER01":
+    elif server == "SQLCLUSTER02":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
-        server = config.SQL_SERVER # TODO: replace
+        server = config.SQL_SERVER_2 # TODO: replace
+    elif server == "SQLCLUSTER01":
+        user = config.SQL_USER
+        password = config.SQL_PASSWORD # TODO: replace in config
+        server = config.SQL_SERVER_1 # TODO: replace
 
     db = ''
     rows = []
@@ -286,7 +290,14 @@ def build_database_list():
 
     for cluster in clusters:
         servers[cluster] = []
-        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", config.SQL_SERVER, config.SQL_USER, config.SQL_PASSWORD)
+        if cluster == "SQLCLUSTER02":
+            cluster_ip = config.SQL_SERVER_2
+        elif cluster == "SQLCLUSTER01":
+            cluster_ip = config.SQL_SERVER_1
+        else:
+            pass # This should never happen.
+
+        conn_string = "DRIVER={};SERVER={};UID={};PWD={}".format("{ODBC Driver 17 for SQL Server}", cluster_ip, config.SQL_USER, config.SQL_PASSWORD)
         try:
             connection = pyodbc.connect(conn_string)
             cursor = connection.execute(sql)
