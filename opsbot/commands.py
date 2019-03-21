@@ -294,18 +294,22 @@ def approve_person(message, target):
                 if admin["id"] == approver:
                     if user is not None:
                         if user["approval_level"] == "unapproved":
-                            message.reply("Approving user: <@{}>".format(target))
+                            message.reply("Approved user: <@{}>".format(target))
                             user["approval_level"] = "approved"
                             hf.save_users(users)
+                            return
                         elif user["approval_level"] == "denied":
                             message.reply(Strings['MARKED_DENIED'])
+                            return
                         else:
                             message.reply(":x: {} is already: {}.".format(target,
                                                                           user["approval_level"]))
+                            return
                     else:
                         message.reply(Strings['USER_NOT_FOUND'].format(target))
-                else:
-                    message.reply(Strings['CANT_APPROVE'])
+                        return
+
+    message.reply(Strings['CANT_APPROVE'])
 
 
 @respond_to('^me$')
