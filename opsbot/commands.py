@@ -280,7 +280,7 @@ def approve_me_group(message):
                 message.reply(":x: Your status is already: {}".format(self_name))
 
 
-@listen_to('^approve (\S*)$')
+@listen_to('^approve (\S*)$', re.IGNORECASE)
 def approve_person(message, target):
     """Approve a user, if the author of the msg is an admin."""
     users = hf.get_users()
@@ -401,7 +401,7 @@ def find_db_by_name(message, db):
                                                                                user_access))
 
 
-@listen_to('^grant (\S*)$')
+@listen_to('^grant (\S*)$', re.IGNORECASE)
 def no_reason(message, db):
     """Display error when no reason given trying to 'grant' access, unless
     extending time."""
@@ -412,7 +412,7 @@ def no_reason(message, db):
         message._client.send_message(errors_channel, "```{}```".format(e))
 
 
-@listen_to('^grantrw (\S*)$')
+@listen_to('^grantrw (\S*)$', re.IGNORECASE)
 def no_reason(message, db):
     """Display error when no reason given trying to 'grantrw' access, unless
     extending time."""
@@ -423,12 +423,12 @@ def no_reason(message, db):
         message._client.send_message(errors_channel, "```{}```".format(e))
 
 
-@listen_to('^grant (\S*) (.*)')
+@listen_to('^grant (\S*) (.*)', re.IGNORECASE)
 def grant_access(message, db, reason):
     """Request read only access to a database."""
     hf.grant(message, db, reason, True)
 
-@listen_to('^grantrw (\S*) (.*)')
+@listen_to('^grantrw (\S*) (.*)', re.IGNORECASE)
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
     hf.grant(message, db, reason, False)
