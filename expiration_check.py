@@ -92,6 +92,19 @@ def delete_sql_user(user, server, database):
         return False
 
 
+def delete_sql_login(user, server):
+    """Delete a SQL login."""
+    #if not sql_user_exists(user, server):
+    #    return
+    sql = "DROP LOGIN [{}]".format(user)
+    try:
+        execute_sql(sql, server)
+        betterprint("SQL: " + sql)
+        return True
+    except:
+        return False
+
+
 for filename in os.listdir("userdata/"):
     changed = False
 
