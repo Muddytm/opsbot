@@ -316,59 +316,59 @@ def build_database_list():
         json.dump(servers, outfile)
 
 
-def delete_expired_users():
-    """Find any expired users and remove them."""
-
-    for filename in os.listdir("userdata/"):
-        changed = False
-
-        with open("userdata/{}".format(filename)) as data_file:
-            userdata = json.load(data_file)
-
-        if "access" not in userdata:
-            continue
-
-        name = userdata["name"]
-
-        for i in reversed(range(len(userdata["access"]))):
-            db = userdata["access"][i]["db"]
-            server = userdata["access"][i]["server"]
-            exp = userdata["access"][i]["expiration"]
-            delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
-            expired = datetime.now() # - delta
-            user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
-            if user_expires < expired:
-                data = {"db": db, "server": server}
-                if data in userdata["notifications"]["deleted"]:
-                    success = delete_sql_user(name, server, db)
-                    if success:
-                        logging.info("{} reason=[USER REMOVED SUCCESSFULLY]\n".format(name), server, db, "removeuser")
-                        del userdata["access"][i]
-                        if data in userdata["notifications"]["deleted"]:
-                            userdata["notifications"]["deleted"].remove(data)
-                        if data in userdata["notifications"]["tenmins"]:
-                            userdata["notifications"]["tenmins"].remove(data)
-                        if data in userdata["notifications"]["hour"]:
-                            userdata["notifications"]["hour"].remove(data)
-                        changed = True
-                    else:
-                        logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
-
-        # If list is empty, we delete logins
-        if not userdata["access"] and changed:
-            with open(db_path) as data_file:
-                databases = json.load(data_file)
-            for server in databases:
-                success = delete_sql_login(name, server)
-                if success:
-                    logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
-                    changed = True
-                else:
-                    logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
-
-        if changed:
-            with open("userdata/{}".format(filename), 'w') as outfile:
-                json.dump(userdata, outfile)
+# def delete_expired_users():
+#     """Find any expired users and remove them."""
+#
+#     for filename in os.listdir("userdata/"):
+#         changed = False
+#
+#         with open("userdata/{}".format(filename)) as data_file:
+#             userdata = json.load(data_file)
+#
+#         if "access" not in userdata:
+#             continue
+#
+#         name = userdata["name"]
+#
+#         for i in reversed(range(len(userdata["access"]))):
+#             db = userdata["access"][i]["db"]
+#             server = userdata["access"][i]["server"]
+#             exp = userdata["access"][i]["expiration"]
+#             delta = timedelta(hours=config.HOURS_TO_GRANT_ACCESS)
+#             expired = datetime.now() # - delta
+#             user_expires = datetime.strptime(exp, "%Y-%m-%dT%H:%M:%S.%f")
+#             if user_expires < expired:
+#                 data = {"db": db, "server": server}
+#                 if data in userdata["notifications"]["deleted"]:
+#                     success = delete_sql_user(name, server, db)
+#                     if success:
+#                         logging.info("{} reason=[USER REMOVED SUCCESSFULLY]\n".format(name), server, db, "removeuser")
+#                         del userdata["access"][i]
+#                         if data in userdata["notifications"]["deleted"]:
+#                             userdata["notifications"]["deleted"].remove(data)
+#                         if data in userdata["notifications"]["tenmins"]:
+#                             userdata["notifications"]["tenmins"].remove(data)
+#                         if data in userdata["notifications"]["hour"]:
+#                             userdata["notifications"]["hour"].remove(data)
+#                         changed = True
+#                     else:
+#                         logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
+#
+#         # If list is empty, we delete logins
+#         if not userdata["access"] and changed:
+#             with open(db_path) as data_file:
+#                 databases = json.load(data_file)
+#             for server in databases:
+#                 success = delete_sql_login(name, server)
+#                 if success:
+#                     logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
+#                     changed = True
+#                 else:
+#                     logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
+#
+#         if changed:
+#             with open("userdata/{}".format(filename), 'w') as outfile:
+#                 json.dump(userdata, outfile)
 
 
 def notify_users(interval):
@@ -432,3 +432,5 @@ def clean(user):
         return user.replace(".", "_")
     elif "_" in user:
         return user.replace("_", ".")
+    else:
+        return user
