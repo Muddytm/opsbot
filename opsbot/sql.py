@@ -33,7 +33,6 @@ def betterprint(text):
 
 def execute_sql(sql, server, database=None, get_rows=False):
     """Execute a SQL statement."""
-
     if server == "mcgintsql01":
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
@@ -269,20 +268,21 @@ def build_database_list():
 
     servers = {}
 
-    # for value in r.json()["value"]:
-    #     if value["name"] != "sysops":
-    #         #if "tags" in value and "CWQI_environment" in value["tags"].keys() and value["tags"]["CWQI_environment"] == "production":
-    #         servers[value["name"]] = []
-    #
-    # for server in servers:
-    #     for group in config.RESOURCE_GROUPS:
-    #         headers = {"Authorization": bearer, "Content-Type": "application/json"}
-    #         r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, group, server),
-    #                          headers=headers)
-    #
-    #         for value in r.json()["value"]:
-    #             if value["name"] != "master":
-    #                 servers[server].append(value["name"])
+    for value in r.json()["value"]:
+        if "name" in value and value["name"] == "mcgintsql01":
+            #if "tags" in value and "CWQI_environment" in value["tags"].keys() and value["tags"]["CWQI_environment"] == "production":
+            servers[value["name"]] = []
+
+    for server in servers:
+        for group in config.RESOURCE_GROUPS:
+            headers = {"Authorization": bearer, "Content-Type": "application/json"}
+            r = requests.get("https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases?api-version=2017-10-01-preview".format(config.SUB_ID, group, server),
+                             headers=headers)
+
+            if "value" in r.json():
+                for value in r.json()["value"]:
+                    if "name" in value and value["name"] != "master":
+                        servers[server].append(value["name"])
 
     # Adding cluster databases to the list.
     clusters = ["SQLCLUSTER02", "SQLCLUSTER01"]
