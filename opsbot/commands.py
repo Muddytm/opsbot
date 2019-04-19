@@ -156,7 +156,7 @@ def notify(message):
 
         # For use with Datadog
         with open("/opt/opsbot35/data/status.txt", "w") as f:
-            f.write(str(datetime.datetime.now()))
+            f.write(str(datetime.now()))
 
         time.sleep(5)
 
