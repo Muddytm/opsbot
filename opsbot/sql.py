@@ -81,6 +81,9 @@ def execute_sql(sql, server, database=None, get_rows=False):
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
             break
+        except pyodbc.Error as e:
+            betterprint("Something went wrong: {}".format(e))
+            break
 
         count += 1
 
