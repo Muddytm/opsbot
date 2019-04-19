@@ -155,7 +155,7 @@ def notify(message):
                 message._client.send_message(errors_channel, "```{}```".format(e))
 
         # For use with Datadog
-        with open("/opt/opsbot35/data/status.txt") as f:
+        with open("/opt/opsbot35/data/status.txt", "w") as f:
             f.write(str(datetime.datetime.now()))
 
         time.sleep(5)
