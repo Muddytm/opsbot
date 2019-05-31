@@ -281,14 +281,14 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
             if not readonly:
                 message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
             else:
-                message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg))
+                message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg, ""))
 
         # Post message about access extended
         if extended_msg != "":
             if not readonly:
                 message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
             else:
-                message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg))
+                message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg, ""))
 
         # Give password or tell user to use the one they've received already
         all_dbs = []
