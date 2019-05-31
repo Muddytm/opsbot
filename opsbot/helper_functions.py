@@ -278,11 +278,17 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
 
         # Post message about access granted
         if granted_msg != "":
-            message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg))
+            if not readonly:
+                message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
+            else:
+                message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg))
 
         # Post message about access extended
         if extended_msg != "":
-            message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg))
+            if not readonly:
+                message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
+            else:
+                message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg))
 
         # Give password or tell user to use the one they've received already
         all_dbs = []
@@ -297,11 +303,6 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         if (granted_msg != "" or extended_msg != ""):
             slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
             message._client.send_message(chan, slack_id_msg)
-
-        # Requested by head of our department - he wanted to be pinged if readwrite
-        # permissions were asked for.
-        if not readonly:
-            message.reply(Strings['READWRITE'].format(config.BOSS))
 
         return
     if level == "denied":
