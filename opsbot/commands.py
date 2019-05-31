@@ -422,7 +422,7 @@ def no_reason(message, db):
     extending time."""
     #message.reply(Strings['GRANT_EXAMPLE'].format(db))
     try:
-        hf.grant(message, db, "[EXTENDING ACCESS TIME]", False)
+        hf.grant(message, db.lower(), "[EXTENDING ACCESS TIME]", False)
     except Exception as e:
         message._client.send_message(errors_channel, "```{}```".format(e))
 
@@ -430,12 +430,12 @@ def no_reason(message, db):
 @listen_to('^grant (\S*) (.*)', re.IGNORECASE)
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    hf.grant(message, db, reason, True)
+    hf.grant(message, db.lower(), reason, True)
 
 @listen_to('^grantrw (\S*) (.*)', re.IGNORECASE)
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    hf.grant(message, db, reason, False)
+    hf.grant(message, db.lower(), reason, False)
 
 
 @respond_to("^approved$")

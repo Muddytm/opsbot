@@ -301,7 +301,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         # Requested by head of our department - he wanted to be pinged if readwrite
         # permissions were asked for.
         if not readonly:
-            message._client.send_message(chan, Strings['READWRITE'].format(config.BOSS))
+            message.reply(Strings['READWRITE'].format(config.BOSS))
 
         return
     if level == "denied":
