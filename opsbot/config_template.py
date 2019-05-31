@@ -22,28 +22,32 @@ SLACK_ERROR_TARGET = os.getenv('SLACK_ERROR_TARGET', '')
 
 # Azure access info. Pulled from ENV since it's more secure there than in
 # a text file.
-AZURE_USER = ""
-AZURE_PASSWORD = ""
-TENANT_ID = ""
-SUB_ID = ""
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+AZURE_DB =
+AZURE_USER =
+AZURE_PASSWORD =
+TENANT_ID =
+SUB_ID =
+CLIENT_ID =
+CLIENT_SECRET =
 RESOURCE_GROUPS = []
 
-SQL_USER = ""
-SQL_PASSWORD = ""
-SQL_SERVER = ""
+SQL_USER =
+SQL_PASSWORD =
+SQL_SERVER_1 =
+SQL_SERVER_2 =
 
-SUMOLOGIC_ENDPOINT = ""
-NEWRELIC_ACC_ID = ""
-NEWRELIC_APP_ID = ""
-NEWRELIC_USER = ""
-NEWRELIC_PASS = ""
+TEMP_USER =
+TEMP_PASSWORD =
+
+SUMOLOGIC_ENDPOINT =
+NEWRELIC_APP_ID =
+NEWRELIC_USER =
+NEWRELIC_PASS =
 
 
 # Slack channel to listen to and do group replies in:
-AUTH_CHANNEL = "" #os.getenv('AUTH_SLACK_CHANNEL')
-AUTH_CHANNEL_ERRORS = ""
+AUTH_CHANNEL = "prod_auth" #os.getenv('AUTH_SLACK_CHANNEL')
+AUTH_CHANNEL_ERRORS = "prod_auth_errors"
 
 # The part that goes after the server name
 SERVER_SUFFIX = ".database.windows.net"
@@ -82,7 +86,7 @@ NOTIFICATION_THRESHOLD_TENMINS = 10
 
 # When sent to the slack channel, this is the printed format:
 # '%b-%d %I:%M%p' looks like 'Feb-08 02:41PM'
-TIME_PRINT_FORMAT = '%b-%d %I:%M%p'
+TIME_PRINT_FORMAT = '%I:%M%p, %B %d'
 
 # Password format.
 # This is a simple replacement:
@@ -110,3 +114,6 @@ THREAD_SLEEP = 2
 
 # Default time a thread should to its primary work, in seconds.
 THREAD_WORK_TIMER = 60
+
+# For CVW
+BOSS = "caleb.hawkins"

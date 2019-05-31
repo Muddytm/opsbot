@@ -297,6 +297,12 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         if (granted_msg != "" or extended_msg != ""):
             slack_id_msg = Strings['SLACK_ID'].format(friendly_exp, name)
             message._client.send_message(chan, slack_id_msg)
+
+        # Requested by head of our department - he wanted to be pinged if readwrite
+        # permissions were asked for.
+        if not readonly:
+            message._client.send_message(chan, Strings['READWRITE'].format(config.BOSS))
+
         return
     if level == "denied":
         message.reply('Request denied')

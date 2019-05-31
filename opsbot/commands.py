@@ -411,7 +411,7 @@ def no_reason(message, db):
     extending time."""
     #message.reply(Strings['GRANT_EXAMPLE'].format(db))
     try:
-        hf.grant(message, db, "[EXTENDING ACCESS TIME]", True)
+        hf.grant(message, db.lower(), "[EXTENDING ACCESS TIME]", True)
     except Exception as e:
         message._client.send_message(errors_channel, "```{}```".format(e))
 

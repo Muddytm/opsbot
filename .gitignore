@@ -1,3 +1,4 @@
+data/status.py
 test.py
 userdata/*.json
 opsbot/config.py

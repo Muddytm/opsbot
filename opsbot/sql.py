@@ -285,7 +285,7 @@ def build_database_list():
             if "value" in r.json():
                 for value in r.json()["value"]:
                     if "name" in value and value["name"] != "master":
-                        servers[server].append(value["name"])
+                        servers[server].append(value["name"].lower())
 
     # Adding cluster databases to the list.
     clusters = ["SQLCLUSTER02", "SQLCLUSTER01"]
@@ -311,7 +311,7 @@ def build_database_list():
             banned = ["master"]
             for row in rows:
                 if row[0] not in banned:
-                    servers[cluster].append(row[0])
+                    servers[cluster].append(row[0].lower())
         except pyodbc.ProgrammingError as e:
             betterprint("Could not log in to {}: {}".format(cluster, e))
 

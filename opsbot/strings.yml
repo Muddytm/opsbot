@@ -37,3 +37,4 @@ LOGS_TIME_FORMAT_ERROR: ":x: You cannot have a `date` parameter alongside a `to`
 LOGS_TIME_RANGE_FORMAT_ERROR: ":x: Remember to have both a `to` and `from` parameter when requesting a range of dates."
 LOGS_NO_TIME_SPECIFIED: "No time specified. Use a `date` parameter to get logs from a specific date, or `to` and `from` for a range of dates."
 TOO_MANY_DBS: "The number of databases you requested is too high. You asked for {} databases; {} is the current limit."
+READWRITE: "<@{}>: readwrite permissions have been requested for the above databases; no further action is required."
