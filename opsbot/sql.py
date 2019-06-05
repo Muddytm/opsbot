@@ -183,6 +183,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
         with open(db_path) as data_file:
             databases = json.load(data_file)
         for serv in databases:
+            delete_sql_login(user, serv)
             sql = "CREATE LOGIN [{}] WITH PASSWORD='{}'".format(user, password)
             betterprint("SQL: " + sql)
             logging.info("{} reason=[CREATING LOGIN]".format(user), server, "[NONE]", "createlogin")

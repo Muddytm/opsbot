@@ -332,3 +332,20 @@ def grant(message, db, reason, readonly):
         grant_sql_access(message, db[:-1], reason, readonly, False, True)
     else:
         grant_sql_access(message, db, reason, readonly)
+
+
+def expire_user(name):
+    """Expire user."""
+    try:
+        with open("userdata/{}_active.json") as f:
+            data = json.load(f)
+
+        for set in data["access"]:
+            cur_time = datetime.strptime(set["expiration"], "%Y-%m-%dT%H:%M:%S.%f")
+            ff_time = cur_time - timedelta(hours=config.HOURS_TO_GRANT_ACCESS, minutes=0)
+            set["expiration"] = ff_time.strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+        with open("userdata/{}_active.json", "w") as f:
+            json.dump(data, f)
+    except IOError:
+        pass

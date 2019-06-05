@@ -74,6 +74,19 @@ def load_slack_users(message):
     message.reply("Successfully loaded users into json file.")
 
 
+@respond_to("expireme", re.IGNORECASE)
+def expireme(message):
+    """Expire the user's access right away."""
+    users = hf.get_users()
+    requester = message._get_user_id()
+    for user in users:
+        if user["id"] == requester:
+            name = user["name"]
+            break
+
+    hf.expire_user(name)
+
+
 @respond_to("logtest")
 def logtest(message):
     """something"""
