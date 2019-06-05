@@ -141,16 +141,20 @@ for filename in os.listdir("userdata/"):
                     logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
 
     # If list is empty, we delete logins
-    if not userdata["access"] and changed:
+    if (not userdata["access"] and changed) or (not userdata["access"] and "outdatedaccess" in userdata):
         with open(db_path) as data_file:
             databases = json.load(data_file)
         for server in databases:
             success = delete_sql_login(name, server)
             if success:
                 logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
+                if "outdatedaccess" in userdata:
+                    del userdata["outdatedaccess"]
                 changed = True
             else:
-                logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
+                userdata["outdatedaccess"] = "x"
+                changed = True
+                #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
     if changed:
         with open("userdata/{}".format(filename), 'w') as outfile:
