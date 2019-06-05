@@ -336,6 +336,9 @@ def grant(message, db, reason, readonly):
 
 def expire_user(name):
     """Expire user."""
+
+    name = name.replace(".", "_")
+
     try:
         with open("/opt/opsbot35/userdata/{}_active.json".format(name)) as f:
             data = json.load(f)
