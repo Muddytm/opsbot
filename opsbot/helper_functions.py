@@ -337,7 +337,7 @@ def grant(message, db, reason, readonly):
 def expire_user(name):
     """Expire user."""
     try:
-        with open("userdata/{}_active.json") as f:
+        with open("userdata/{}_active.json".format(name)) as f:
             data = json.load(f)
 
         for set in data["access"]:
@@ -345,7 +345,7 @@ def expire_user(name):
             ff_time = cur_time - timedelta(hours=config.HOURS_TO_GRANT_ACCESS, minutes=0)
             set["expiration"] = ff_time.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
-        with open("userdata/{}_active.json", "w") as f:
+        with open("userdata/{}_active.json".format(name), "w") as f:
             json.dump(data, f)
     except IOError:
         pass
