@@ -68,7 +68,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                 betterprint("Timed out for the third time, I'm outta here.")
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
-            if "user is currently logged in" in e:
+            if "user is currently logged in" in e.args[1]:
                 if userdata:
                     userdata["expired"] = "new"
                     return None, userdata
