@@ -3,7 +3,7 @@ TOO_MANY_PASSWORDS: ":x: I can't generate that many passwords at one time."
 HELP: ":grey_exclamation: Help document for me lives at:"
 APPROVER_REQUEST: ":grey_exclamation: Sending request to the approvers to have you be approved."
 APPROVER_REQUEST_DETAIL: ':exclamation: <@{}>: Please review this user and approve if appropriate: ```approve {}```'
-APPROVE_ME_REQUEST: ':question: You can request approval by directly messaging me `approve me`. (You can click on my icon to quickly message me)'
+APPROVE_ME_REQUEST: ':question: You can request approval by directly messaging me `approve me`. (You can click on my icon to quickly send a message)'
 MARKED_DENIED: ":exclamation: This user was marked 'denied'. This must be removed manually before they can be approved."
 USER_NOT_FOUND: ":question: I can't find that user ({}). Are you using their slack id? If so, please check the spelling."
 CANT_APPROVE: ':x: You cannot approve users.'
