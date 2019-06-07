@@ -88,7 +88,7 @@ def delete_sql_user(user, server, database):
     sql = "DROP USER [{}]".format(user)
     #print ("lets delete it now")
     try:
-        rows, userdata = execute_sql(sql, server, database, False, userdata)
+        rows, userdata = execute_sql(sql, server, database)
         betterprint("SQL: " + sql)
         return True
     except:
