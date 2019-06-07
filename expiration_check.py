@@ -152,8 +152,9 @@ for filename in os.listdir("userdata/"):
             success, userdata = delete_sql_login(name, server, userdata)
             if success:
                 logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
+                changed = True
             else:
-                pass
+                changed = True
                 #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
     if changed:
