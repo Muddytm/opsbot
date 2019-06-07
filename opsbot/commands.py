@@ -251,8 +251,8 @@ def channel_help_respond(message):
 #    message._client.send_message(chan, help_string)
 
 
-@listen_to("help (.*)", re.IGNORECASE)
-@respond_to("help (.*)", re.IGNORECASE)
+@listen_to("^help (.*)", re.IGNORECASE)
+@respond_to("^help (.*)", re.IGNORECASE)
 def channel_help_item(message, query):
     """Reply with help for the specific item."""
     query = query.lower()

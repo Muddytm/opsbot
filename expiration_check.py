@@ -18,7 +18,7 @@ def betterprint(text):
         pass
 
 
-def execute_sql(sql, server, database=None, get_rows=False):
+def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     """Execute a SQL statement."""
 
     if server == "mcgintsql01":
@@ -68,13 +68,16 @@ def execute_sql(sql, server, database=None, get_rows=False):
                 betterprint("Timed out for the third time, I'm outta here.")
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
+            if "user is currently logged in" in e:
+                if userdata:
+                    userdata["expired"] = "new"
             break
 
         count += 1
 
     #print ("exit now!")
     #time.sleep(60)
-    return rows
+    return rows, userdata
 
 
 def delete_sql_user(user, server, database):
@@ -85,24 +88,24 @@ def delete_sql_user(user, server, database):
     sql = "DROP USER [{}]".format(user)
     #print ("lets delete it now")
     try:
-        execute_sql(sql, server, database)
+        rows, userdata = execute_sql(sql, server, database, False, userdata)
         betterprint("SQL: " + sql)
         return True
     except:
         return False
 
 
-def delete_sql_login(user, server):
+def delete_sql_login(user, server, userdata):
     """Delete a SQL login."""
     #if not sql_user_exists(user, server):
     #    return
     sql = "DROP LOGIN [{}]".format(user)
     try:
-        execute_sql(sql, server)
+        rows, userdata = execute_sql(sql, server, None, False, userdata)
         betterprint("SQL: " + sql)
-        return True
+        return True, userdata
     except:
-        return False
+        return False, userdata
 
 
 for filename in os.listdir("userdata/"):
@@ -141,19 +144,15 @@ for filename in os.listdir("userdata/"):
                     logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
 
     # If list is empty, we delete logins
-    if (not userdata["access"] and changed) or (not userdata["access"] and "outdatedaccess" in userdata):
+    if (not userdata["access"] and changed) or (not userdata["access"] and "expired" in userdata and userdata["expired"] == "new"):
         with open(db_path) as data_file:
             databases = json.load(data_file)
         for server in databases:
-            success = delete_sql_login(name, server)
+            success, userdata = delete_sql_login(name, server, userdata)
             if success:
                 logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
-                if "outdatedaccess" in userdata:
-                    del userdata["outdatedaccess"]
-                changed = True
             else:
-                userdata["outdatedaccess"] = "x"
-                changed = True
+                pass
                 #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
     if changed:
