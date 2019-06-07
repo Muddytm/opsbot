@@ -71,6 +71,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
             if "user is currently logged in" in e:
                 if userdata:
                     userdata["expired"] = "new"
+                    return None, userdata
             break
 
         count += 1
