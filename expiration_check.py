@@ -69,9 +69,9 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
             if "user is currently logged in" in e.args[1]:
-                if userdata:
+                if userdata and "expired" not in userdata:
                     userdata["expired"] = "new"
-                    return None, userdata
+                return None, userdata
             break
 
         count += 1

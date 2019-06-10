@@ -178,7 +178,7 @@ def notify(message):
             # Send "log out of SQL server" message
             if "expired" in userdata and "new" in userdata["expired"]:
                 for user in users:
-                    if user["name"].replace("_", ".") == filename.replace("_active.json", ""):
+                    if user["name"].replace(".", "_") == filename.replace("_active.json", ""):
                         chan = hf.find_channel(message._client.channels, user["id"])
 
                         message._client.send_message(chan,
