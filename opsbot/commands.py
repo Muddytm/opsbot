@@ -176,14 +176,14 @@ def notify(message):
                 userdata = json.load(data_file)
 
             # Send "log out of SQL server" message
-            if "expired" in userdata and "new" in userdata["expired"]:
+            if "expire_status" in userdata and "new" in userdata["expire_status"]:
                 for user in users:
                     if user["name"].replace(".", "_") == filename.replace("_active.json", ""):
                         chan = hf.find_channel(message._client.channels, user["id"])
 
                         message._client.send_message(chan,
                                                      Strings["REMOVE_LOGIN"])
-                        userdata["expired"] = "old"
+                        userdata["expire_status"] = "old"
 
                         with open("userdata/{}".format(filename), 'w') as outfile:
                             json.dump(userdata, outfile)

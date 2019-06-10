@@ -70,11 +70,19 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
             betterprint("Cannot access this server: {}".format(e))
             if "user is currently logged in" in e.args[1]:
                 if userdata and "expired" not in userdata:
-                    userdata["expired"] = "new"
+                    userdata["expired"] = []
+                    userdata["expired_status"] = "new"
+
+                if server not in userdata["expired"]:
+                    userdata["expired"].append(server)
                 return None, userdata
             break
 
         count += 1
+
+    # Remove this later
+    if "expired" in userdata and server in userdata["expired"]:
+        userdata.remove(server)
 
     #print ("exit now!")
     #time.sleep(60)
@@ -145,7 +153,7 @@ for filename in os.listdir("userdata/"):
                     logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
 
     # If list is empty, we delete logins
-    if (not userdata["access"] and changed) or (not userdata["access"] and "expired" in userdata and userdata["expired"] == "old"):
+    if (not userdata["access"] and changed) or (not userdata["access"] and "expire_status" in userdata and userdata["expire_status"] == "old"):
         with open(db_path) as data_file:
             databases = json.load(data_file)
         for server in databases:
@@ -156,6 +164,10 @@ for filename in os.listdir("userdata/"):
             else:
                 changed = True
                 #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
+
+    if not userdata["expired"]:
+        del userdata["expired"]
+        del userdata["expire_status"]
 
     if changed:
         with open("userdata/{}".format(filename), 'w') as outfile:
