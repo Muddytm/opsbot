@@ -165,7 +165,7 @@ for filename in os.listdir("userdata/"):
                 changed = True
                 #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
-    if not userdata["expired"]:
+    if "expired" in userdata and not userdata["expired"]:
         del userdata["expired"]
         del userdata["expire_status"]
 
