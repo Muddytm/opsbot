@@ -145,7 +145,7 @@ for filename in os.listdir("userdata/"):
                     logging.info("{} reason=[USER REMOVAL FAILED]\n".format(name), server, db, "removeuserfailure")
 
     # If list is empty, we delete logins
-    if (not userdata["access"] and changed) or (not userdata["access"] and "expired" in userdata and userdata["expired"] == "new"):
+    if (not userdata["access"] and changed) or (not userdata["access"] and "expired" in userdata and userdata["expired"] == "old"):
         with open(db_path) as data_file:
             databases = json.load(data_file)
         for server in databases:

@@ -145,14 +145,6 @@ def notify(message):
                             servers.append(grant["server"])
                         chan = hf.find_channel(message._client.channels, user["id"])
 
-                        # Set up reminder to log out of SQL.
-                        userdata = None
-                        for filename in os.listdir("userdata/"):
-                            if user["name"].replace(".", "_") in filename:
-                                with open("userdata/{}".format(filename)) as data_file:
-                                    userdata = json.load(data_file)
-                                    break
-
                         if flag is "hour":
                             message._client.send_message(chan,
                                                          Strings['NOTIFY_EXPIRE_HOUR'].format(", ".join(dbs)) + "\n"
@@ -174,14 +166,21 @@ def notify(message):
                             for db, server in zip(dbs, servers):
                                 logging.info("{} reason=[NOTIFIED OF DATABASE ACCESS EXPIRING]\n".format(user["name"]), server, db, "notifyexpire")
 
-                        # Send "log out of SQL server" message
-                        if userdata and "expired" in userdata and userdata["expired"] == "new":
-                            message._client.send_message(chan,
-                                                         Strings["REMOVE_LOGIN"])
-                            userdata["expired"] = "old"
+                        # Set up reminder to log out of SQL.
+                        userdata = None
+                        for filename in os.listdir("userdata/"):
+                            if person.replace(".", "_") in filename:
+                                with open("userdata/{}".format(filename)) as data_file:
+                                    userdata = json.load(data_file)
 
-                            with open("userdata/{}".format(filename), 'w') as outfile:
-                                json.dump(userdata, outfile)
+                                # Send "log out of SQL server" message
+                                if userdata and "expired" in userdata and userdata["expired"] == "new":
+                                    message._client.send_message(chan,
+                                                                 Strings["REMOVE_LOGIN"])
+                                    userdata["expired"] = "old"
+
+                                    with open("userdata/{}".format(filename), 'w') as outfile:
+                                        json.dump(userdata, outfile)
             except Exception as e:
                 message._client.send_message(errors_channel, "```{}```".format(e))
 
