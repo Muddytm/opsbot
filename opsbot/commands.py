@@ -169,24 +169,24 @@ def notify(message):
             except Exception as e:
                 message._client.send_message(errors_channel, "```{}```".format(e))
 
-        # Set up reminder to log out of SQL.
-        users = hf.get_users()
-        for filename in os.listdir("userdata/"):
-            with open("userdata/{}".format(filename)) as data_file:
-                userdata = json.load(data_file)
-
-            # Send "log out of SQL server" message
-            if "expire_status" in userdata and "new" in userdata["expire_status"]:
-                for user in users:
-                    if user["name"].replace(".", "_") == filename.replace("_active.json", ""):
-                        chan = hf.find_channel(message._client.channels, user["id"])
-
-                        message._client.send_message(chan,
-                                                     Strings["REMOVE_LOGIN"])
-                        userdata["expire_status"] = "old"
-
-                        with open("userdata/{}".format(filename), 'w') as outfile:
-                            json.dump(userdata, outfile)
+        # # Set up reminder to log out of SQL.
+        # users = hf.get_users()
+        # for filename in os.listdir("userdata/"):
+        #     with open("userdata/{}".format(filename)) as data_file:
+        #         userdata = json.load(data_file)
+        #
+        #     # Send "log out of SQL server" message
+        #     if "expire_status" in userdata and "new" in userdata["expire_status"]:
+        #         for user in users:
+        #             if user["name"].replace(".", "_") == filename.replace("_active.json", ""):
+        #                 chan = hf.find_channel(message._client.channels, user["id"])
+        #
+        #                 message._client.send_message(chan,
+        #                                              Strings["REMOVE_LOGIN"])
+        #                 userdata["expire_status"] = "old"
+        #
+        #                 with open("userdata/{}".format(filename), 'w') as outfile:
+        #                     json.dump(userdata, outfile)
 
         # For use with Datadog
         with open("/opt/opsbot35/data/status.txt", "w") as f:
