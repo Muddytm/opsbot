@@ -171,8 +171,11 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
 
         if "access" not in userdata:
             userdata["access"] = []
+
+        if "servers" not in userdata:
+            userdata["servers"] = []
     else:
-        userdata = {"name": user, "access": [], "notifications": {"hour": [], "tenmins": [], "deleted": []}}
+        userdata = {"name": user, "access": [], "notifications": {"hour": [], "tenmins": [], "deleted": []}, "servers": []}
 
     # If user does not have access to anything then we create logins
     if not userdata["access"]:
@@ -190,6 +193,8 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
 
             try:
                 execute_sql(sql, serv)
+                if serv not in userdata["servers"]:
+                    userdata["servers"].append(serv)
             except pyodbc.InterfaceError as e:
                 betterprint("Login failed :(")
         created_login = True
@@ -285,7 +290,7 @@ def build_database_list():
 
             if "value" in r.json():
                 for value in r.json()["value"]:
-                    if "name" in value and value["name"] != "master":
+                    if "name" in value:
                         servers[server].append(value["name"].lower())
 
     # Adding cluster databases to the list.
