@@ -39,4 +39,4 @@ LOGS_NO_TIME_SPECIFIED: "No time specified. Use a `date` parameter to get logs f
 TOO_MANY_DBS: "The number of databases you requested is too high. You asked for {} databases; {} is the current limit."
 READWRITE: "<@{}>: readwrite permissions have been requested for the above databases; no further action is required."
 REMOVE_LOGIN: "*NOTICE:* your access has been revoked, but you are still logged into one or more SQL servers. Please log out as soon as you're done, before requesting further database access."
-LOGOUT_PLEASE: <@{}>: you are still logged into the SQL server *{}*. Please log out as soon as you're done. 
+LOGOUT_PLEASE: "<@{}>: you are still logged into the SQL server *{}*. Please log out as soon as you're done."
