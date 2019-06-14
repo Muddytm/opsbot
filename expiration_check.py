@@ -81,6 +81,10 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                         json.dump(jobs, f)
 
                 return None, userdata
+            elif "it does not exist" in e.args[1]:
+                userdata["servers"].remove(server)
+
+                return None, userdata
             break
 
         count += 1
