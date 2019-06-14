@@ -71,6 +71,15 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
             if "user is currently logged in" in e.args[1]:
+                with open("data/jobs.json") as f:
+                    jobs = json.load(f)
+
+                if "{}:{}".format(userdata["name"], server) not in jobs:
+                    jobs.append("{}:{}".format(userdata["name"], server))
+
+                    with open("data/jobs.json", "w") as f:
+                        json.dump(jobs, f)
+
                 return None, userdata
             break
 

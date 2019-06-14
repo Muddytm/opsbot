@@ -38,6 +38,11 @@ def main():
     if not os.path.isdir("log"):
         os.makedirs("log")
 
+    if not os.path.isfile("data/jobs.json"):
+        with open("data/jobs.json", "w") as outfile:
+            data = []
+            json.dump(data, outfile)
+
     if not os.path.isfile("data/users.json"):
         with open("data/users.json", "w") as outfile:
             data = {}
