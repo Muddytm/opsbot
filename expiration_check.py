@@ -74,7 +74,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                 with open("data/jobs.json") as f:
                     jobs = json.load(f)
 
-                if "{}:{}".format(userdata["name"], server) not in jobs:
+                if "{}:{}".format(userdata["name"], server) not in jobs and "{}:{}:DONE".format(userdata["name"], server) not in jobs:
                     jobs.append("{}:{}".format(userdata["name"], server))
 
                     with open("data/jobs.json", "w") as f:

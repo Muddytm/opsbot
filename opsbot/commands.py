@@ -172,16 +172,17 @@ def notify(message):
         with open("data/jobs.json") as f:
             jobs = json.load(f)
 
+        new_jobs = []
         if len(jobs) > 0:
             for job in jobs:
-                message._client.send_message(public_channel,
-                                             Strings["LOGOUT_PLEASE"].format(job.split(":")[0],
-                                                                             job.split(":")[1]))
-
-            jobs = []
+                if not job.endswith("DONE"):
+                    message._client.send_message(public_channel,
+                                                 Strings["LOGOUT_PLEASE"].format(job.split(":")[0],
+                                                                                 job.split(":")[1]))
+                    new_jobs.append(job + ":DONE")
 
             with open("data/jobs.json", "w") as f:
-                json.dump(jobs, f)
+                json.dump(new_jobs, f)
 
         # For use with Datadog
         with open("/opt/opsbot35/data/status.txt", "w") as f:
