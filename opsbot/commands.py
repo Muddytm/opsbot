@@ -176,9 +176,10 @@ def notify(message):
         if len(jobs) > 0:
             for job in jobs:
                 if not job.endswith("DONE"):
+                    job_string = job.replace("10.132.140.160", "SQLCLUSTER02").replace("10.132.140.150", "SQLCLUSTER01")
                     message._client.send_message(public_channel,
-                                                 Strings["LOGOUT_PLEASE"].format(job.split(":")[0],
-                                                                                 job.split(":")[1]))
+                                                 Strings["LOGOUT_PLEASE"].format(job_string.split(":")[0],
+                                                                                 job_string.split(":")[1]))
                     new_jobs.append(job + ":DONE")
 
             with open("data/jobs.json", "w") as f:
@@ -196,6 +197,7 @@ def upgrade(message, target, num):
     """Upgrade a user to the specified approval level.
 
     Commented out for now since this can be abused, usage should be limited."""
+    return
     users = hf.get_users()
 
     for user in users:
