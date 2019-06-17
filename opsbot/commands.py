@@ -181,6 +181,8 @@ def notify(message):
                                                  Strings["LOGOUT_PLEASE"].format(job_string.split(":")[0],
                                                                                  job_string.split(":")[1]))
                     new_jobs.append(job + ":DONE")
+                else:
+                    new_jobs.append(job)
 
             with open("data/jobs.json", "w") as f:
                 json.dump(new_jobs, f)
