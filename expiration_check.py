@@ -74,14 +74,11 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                 with open("data/jobs.json") as f:
                     jobs = json.load(f)
 
-                for job in jobs:
-                    if job.startswith("{}:{}".format(userdata["name"], server)):
-                        continue
-                    else:
-                        jobs.append("{}:{}".format(userdata["name"], server))
+                if "{}:{}".format(userdata["name"], server) not in jobs and "{}:{}:DONE".format(userdata["name"], server) not in jobs:
+                    jobs.append("{}:{}".format(userdata["name"], server))
 
-                with open("data/jobs.json", "w") as f:
-                    json.dump(jobs, f)
+                    with open("data/jobs.json", "w") as f:
+                        json.dump(jobs, f)
 
                 return None, userdata
             elif "it does not exist" in e.args[1]:
