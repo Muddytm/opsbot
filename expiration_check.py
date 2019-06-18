@@ -57,9 +57,9 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
             connection.close()
             if get_rows:
                 rows = cursor.fetchall()
-            break
 
             userdata["servers"].remove(server)
+            break
         except pyodbc.InterfaceError as e:
             betterprint("Login failed. Reason: {}".format(e))
             break
@@ -68,6 +68,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                 betterprint("Timed out...trying again. Reason: {}".format(e))
             else:
                 betterprint("Timed out for the third time, I'm outta here.")
+                break
         except pyodbc.ProgrammingError as e:
             betterprint("Cannot access this server: {}".format(e))
             if "user is currently logged in" in e.args[1]:
@@ -89,9 +90,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
 
         count += 1
 
-    #print ("exit now!")
-    #time.sleep(60)
-    return rows, userdata
+    return None, userdata
 
 
 def delete_sql_user(user, server, database):
@@ -173,3 +172,15 @@ for filename in os.listdir("userdata/"):
     if changed:
         with open("userdata/{}".format(filename), 'w') as outfile:
             json.dump(userdata, outfile)
+
+        if not userdata["servers"]:
+            with open("data/jobs.json") as f:
+                jobs = json.load(f)
+
+            new_jobs = []
+            for job in jobs:
+                if userdata["name"] not in job:
+                    new_jobs.append(job)
+
+            with open("data/jobs.json", "w") as f:
+                json.dump(new_jobs, f)
