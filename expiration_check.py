@@ -82,7 +82,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
                         json.dump(jobs, f)
 
                 return None, userdata
-            elif "it does not exist" in e.args[1]:
+            elif "it does not exist" in e.args[1] and "drop the user" not in e.args[1]:
                 userdata["servers"].remove(server)
 
                 return None, userdata
@@ -90,7 +90,10 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
 
         count += 1
 
-    return None, userdata
+    if rows:
+        return rows, userdata
+    else:
+        return None, userdata
 
 
 def delete_sql_user(user, server, database):
