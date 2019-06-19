@@ -104,8 +104,9 @@ def delete_sql_user(user, server, database):
     sql = "DROP USER [{}]".format(user)
     #print ("lets delete it now")
     try:
-        rows, userdata = execute_sql(sql, server, database)
         betterprint("SQL: " + sql)
+        rows, userdata = execute_sql(sql, server, database)
+        betterprint("USER removal successful.")
         return True
     except:
         return False
@@ -113,12 +114,12 @@ def delete_sql_user(user, server, database):
 
 def delete_sql_login(user, server, userdata):
     """Delete a SQL login."""
-    #if not sql_user_exists(user, server):
-    #    return
+    betterprint("Removing LOGIN {}".format(user))
     sql = "DROP LOGIN [{}]".format(user)
     try:
-        rows, userdata = execute_sql(sql, server, None, False, userdata)
         betterprint("SQL: " + sql)
+        rows, userdata = execute_sql(sql, server, None, False, userdata)
+        betterprint("LOGIN removal successful.")
         return True, userdata
     except:
         return False, userdata

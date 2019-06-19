@@ -314,7 +314,7 @@ def build_database_list():
             connection.commit()
             connection.close()
 
-            banned = ["master"]
+            banned = []
             for row in rows:
                 if row[0] not in banned:
                     servers[cluster].append(row[0].lower())
