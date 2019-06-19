@@ -108,20 +108,22 @@ def delete_sql_user(user, server, database):
         rows, userdata = execute_sql(sql, server, database)
         betterprint("USER removal successful.")
         return True
-    except:
+    except Exception as e:
+        print (e)
         return False
 
 
 def delete_sql_login(user, server, userdata):
     """Delete a SQL login."""
-    betterprint("Removing LOGIN {}".format(user))
+    betterprint("Removing LOGIN {} from server {}".format(user, server))
     sql = "DROP LOGIN [{}]".format(user)
     try:
         betterprint("SQL: " + sql)
         rows, userdata = execute_sql(sql, server, None, False, userdata)
         betterprint("LOGIN removal successful.")
         return True, userdata
-    except:
+    except Exception as e:
+        print (e)
         return False, userdata
 
 
@@ -162,14 +164,17 @@ for filename in os.listdir("userdata/"):
 
     # If list is empty, we delete logins
     if (len(userdata["access"]) == 0 and changed) or (len(userdata["access"]) == 0 and "servers" in userdata and len(userdata["servers"]) > 0):
-        for server in userdata["servers"]:
-            success, userdata = delete_sql_login(name, server, userdata)
-            if success:
-                logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
-                changed = True
-            else:
-                changed = True
-                #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
+        with open(db_path) as data_file:
+            databases = json.load(data_file)
+        for server in databases:
+            if server in userdata["servers"]:
+                success, userdata = delete_sql_login(name, server, userdata)
+                if success:
+                    logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
+                    changed = True
+                else:
+                    changed = True
+                    #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
     if changed:
         with open("userdata/{}".format(filename), 'w') as outfile:
