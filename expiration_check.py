@@ -9,9 +9,6 @@ import opsbot.config as config
 
 db_path = config.DATA_PATH + 'databases.json'
 
-# to solve the issue of removing servers from list that is being iterated over
-servers_to_remove = []
-
 def betterprint(text):
     """Print only if there is a console to print to."""
     try:
@@ -28,15 +25,15 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     if server == "mcgintsql01":
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
-        server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
+        server_ip = "tcp:{}.database.windows.net".format(config.AZURE_DB)
     elif server == "SQLCLUSTER02":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
-        server = config.SQL_SERVER_2 # TODO: replace
+        server_ip = config.SQL_SERVER_2 # TODO: replace
     elif server == "SQLCLUSTER01":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
-        server = config.SQL_SERVER_1 # TODO: replace
+        server_ip = config.SQL_SERVER_1 # TODO: replace
 
     db = ''
     rows = []
@@ -49,7 +46,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     conn_string = ("Driver={{ODBC Driver 17 for SQL Server}};Server={}" +
                    ",1433;{}Uid={};Pwd={};" +
                    "Encrypt=yes;TrustServerCertificate=yes;Connection " +
-                   "Timeout=30;").format(server, db, user, password)
+                   "Timeout=30;").format(server_ip, db, user, password)
     #print (conn_string)
     #print (sql)
     count = 0
@@ -134,6 +131,9 @@ def delete_sql_login(user, server, userdata):
 
 for filename in os.listdir("userdata/"):
     changed = False
+
+    # to solve the issue of removing servers from list that is being iterated over
+    servers_to_remove = []
 
     with open("userdata/{}".format(filename)) as data_file:
         userdata = json.load(data_file)
