@@ -9,6 +9,8 @@ import opsbot.config as config
 
 db_path = config.DATA_PATH + 'databases.json'
 
+# to solve the issue of removing servers from list that is being iterated over
+servers_to_remove = []
 
 def betterprint(text):
     """Print only if there is a console to print to."""
@@ -20,6 +22,8 @@ def betterprint(text):
 
 def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     """Execute a SQL statement."""
+
+    global servers_to_remove
 
     if server == "mcgintsql01":
         user = config.AZURE_USER + "@" + server
@@ -58,7 +62,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
             if get_rows:
                 rows = cursor.fetchall()
 
-            userdata["servers"].remove(server)
+            servers_to_remove.append(server)
             break
         except pyodbc.InterfaceError as e:
             betterprint("Login failed. Reason: {}".format(e))
@@ -83,7 +87,8 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
 
                 return None, userdata
             elif "it does not exist" in e.args[1] and "drop the user" not in e.args[1]:
-                userdata["servers"].remove(server)
+                #userdata["servers"].remove(server)
+                servers_to_remove.append(server)
 
                 return None, userdata
             break
@@ -177,6 +182,10 @@ for filename in os.listdir("userdata/"):
                     #logging.info("{} reason=[LOGIN REMOVAL FAILED]\n".format(name), server, "[None]", "removeloginfailure")
 
     if changed:
+        for server in servers_to_remove:
+            if server in userdata["servers"]:
+                userdata["servers"].remove(server)
+
         with open("userdata/{}".format(filename), 'w') as outfile:
             json.dump(userdata, outfile)
 
