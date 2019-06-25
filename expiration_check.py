@@ -19,9 +19,6 @@ def betterprint(text):
 
 def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     """Execute a SQL statement."""
-
-    global servers_to_remove
-
     if server == "mcgintsql01":
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
@@ -58,8 +55,6 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
             connection.close()
             if get_rows:
                 rows = cursor.fetchall()
-
-            servers_to_remove.append(server)
             break
         except pyodbc.InterfaceError as e:
             betterprint("Login failed. Reason: {}".format(e))
@@ -84,10 +79,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
 
                 return None, userdata
             elif "it does not exist" in e.args[1] and "drop the user" not in e.args[1]:
-                #userdata["servers"].remove(server)
-                servers_to_remove.append(server)
-
-                return None, userdata
+                return "success", userdata
             break
 
         count += 1
@@ -95,7 +87,7 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
     if rows:
         return rows, userdata
     else:
-        return None, userdata
+        return "success", userdata
 
 
 def delete_sql_user(user, server, database):
@@ -117,12 +109,16 @@ def delete_sql_user(user, server, database):
 
 def delete_sql_login(user, server, userdata):
     """Delete a SQL login."""
+    global servers_to_remove
     betterprint("Removing LOGIN {} from server {}".format(user, server))
     sql = "DROP LOGIN [{}]".format(user)
     try:
         betterprint("SQL: " + sql)
         rows, userdata = execute_sql(sql, server, None, False, userdata)
         betterprint("LOGIN removal successful.")
+
+        if rows:
+            servers_to_remove.append(server)
         return True, userdata
     except Exception as e:
         print (e)
