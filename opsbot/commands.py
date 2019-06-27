@@ -402,8 +402,8 @@ def find_user_by_name(message, username):
     message.reply('No user found by that name: {}.'.format(username))
 
 
-@respond_to('^dbdetails (.*)')
-@listen_to('^dbdetails (.*)')
+@respond_to('^dbinfo (.*)')
+@listen_to('^dbinfo (.*)')
 def find_db_by_name(message, db):
     """Return information regarding this db, notably what server it's on
     and what users currently have access to it."""
@@ -510,3 +510,25 @@ def sla_report(message):
     message.channel.upload_file("sla_report.csv",
                                 "log/sla_report.csv",
                                 initial_comment="Here's your monthly SLA report.")
+
+
+@respond_to("^users", re.IGNORECASE)
+def usersinfo(message):
+    """Returns all info on current users."""
+    info = ""
+    post_info = ""
+    for filename in os.listdir("userdata/"):
+        with open("userdata/{}".format(filename)) as data_file:
+            userdata = json.load(data_file)
+
+        if userdata["access"]:
+            db_list = []
+            for instance in userdata["access"]:
+                db_list.append(instance["db"])
+
+            info += "" + userdata["name"] + " - " + ", ".join(db_list) + "\n"
+
+        elif userdata["servers"]:
+            post_info += userdata["name"] + " - " + ", ".join(userdata["servers"]) + "\n"
+
+    message.reply("Current user access:\n```{}```\nCurrently expired users that are still logged in:\n```{}```".format(info, post_info))

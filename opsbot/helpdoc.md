@@ -8,7 +8,7 @@ To gain access to a database, go to the main Authbot channel and type `grant [da
 To extend access to a database, go to the main Authbot channel and type `grant [database]`. No specified reason is necessary.
 
 # Database Details
-To get database details (server name and current users with access), message Authbot with `dbdetails [database]`.
+To get database details (server name and current users with access), message Authbot with `dbinfo [database]`.
 
 # Getting Approval
 To get approval for the purposes of obtaining database access, send `approve me` in a direct message to the Authbot. The admins will be asked to approve or deny your request, and you will be informed when they've responded.
