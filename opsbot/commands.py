@@ -528,7 +528,7 @@ def usersinfo(message):
 
             info += "" + userdata["name"] + " - " + ", ".join(db_list) + "\n"
 
-        elif userdata["servers"]:
+        elif "servers" in userdata and userdata["servers"]:
             post_info += userdata["name"] + " - " + ", ".join(userdata["servers"]) + "\n"
 
     message.reply("Current user access:\n```{}```\nCurrently expired users that are still logged in:\n```{}```".format(info, post_info))
