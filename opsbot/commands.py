@@ -512,8 +512,8 @@ def sla_report(message):
                                 initial_comment="Here's your monthly SLA report.")
 
 
-@respond_to("^users", re.IGNORECASE)
-def usersinfo(message):
+@respond_to("^userinfo", re.IGNORECASE)
+def userinfo(message):
     """Returns all info on current users."""
     info = ""
     post_info = ""
@@ -530,5 +530,11 @@ def usersinfo(message):
 
         elif "servers" in userdata and userdata["servers"]:
             post_info += userdata["name"] + " - " + ", ".join(userdata["servers"]) + "\n"
+
+    if info == "":
+        info = "None!"
+
+    if post_info == "":
+        post_info == "None!"
 
     message.reply("Current user access:\n```{}```\nCurrently expired users that are still logged in:\n```{}```".format(info, post_info))
