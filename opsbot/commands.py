@@ -531,10 +531,10 @@ def userinfo(message):
         elif "servers" in userdata and userdata["servers"]:
             post_info += userdata["name"] + " - " + ", ".join(userdata["servers"]) + "\n"
 
-    if info == "":
+    if not info:
         info = "None!"
 
-    if post_info == "":
-        post_info == "None!"
+    if not post_info:
+        post_info = "None!"
 
     message.reply("Current user access:\n```{}```\nCurrently expired users that are still logged in:\n```{}```".format(info, post_info))
