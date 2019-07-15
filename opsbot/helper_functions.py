@@ -215,7 +215,7 @@ def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False
         with open ("data/databases.json") as f:
             data = json.load(f)
 
-        for server in f:
+        for server in data:
             server_list.append(server.lower())
 
         if db.lower() in server_list:
