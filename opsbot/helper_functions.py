@@ -199,8 +199,36 @@ def have_channel_open(channels, user):
     return False
 
 
-def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=False):
+def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False):
     """Grant access for the user to a the specified database."""
+    # Get approval level of requester, to see if they're approved.
+    users = get_users()
+    requester = message._get_user_id()
+    for user in users:
+        if user["id"] == requester:
+            name = user["name"]
+            level = user["approval_level"]
+
+    # Do this if we're giving SQL jobs access.
+    if perms == "sqljobs":
+        server_list = []
+        with open ("data/databases.json") as f:
+            data = json.load(f)
+
+        for server in f:
+            server_list.append(server.lower())
+
+        if db.lower() in server_list:
+            result = sql.create_sql_jobs_access(name, db, reason)
+
+            if result == "noaccess":
+                message.reply(Strings["SQLJOBS_NOACCESS"])
+            elif result == "success":
+                message.reply(Strings["SQLJOBS_SUCCESS"].format(db.upper()))
+
+        return
+
+    # Get db list
     db_list = sql.database_list()
     requested_dbs = []
 
@@ -229,14 +257,6 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
         message.reply(Strings["TOO_MANY_DBS"].format(str(len(requested_dbs)), str(limit)))
         return
 
-    # Get approval level of requester, to see if they're approved.
-    users = get_users()
-    requester = message._get_user_id()
-    for user in users:
-        if user["id"] == requester:
-            name = user["name"]
-            level = user["approval_level"]
-
     if (level == "approved") or (level == "admin"):
         # Tell the user if there are no databases by that name
         if (len(requested_dbs)) == 0:
@@ -255,7 +275,7 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
                                                                    db["db"],
                                                                    db["server"],
                                                                    expiration,
-                                                                   readonly,
+                                                                   perms,
                                                                    reason)
 
             # We want the expiration time to look nice.
@@ -278,14 +298,14 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
 
         # Post message about access granted
         if granted_msg != "":
-            if not readonly:
+            if "readwrite" in perms:
                 message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
             else:
                 message.reply(Strings["GRANTED_ACCESS"].format(friendly_exp, granted_msg, ""))
 
         # Post message about access extended
         if extended_msg != "":
-            if not readonly:
+            if "readwrite" in perms:
                 message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg, "\n" + Strings['READWRITE'].format(config.BOSS)))
             else:
                 message.reply(Strings["EXTENDED_ACCESS"].format(friendly_exp, extended_msg, ""))
@@ -312,10 +332,17 @@ def grant_sql_access(message, db, reason, readonly, ast_left=False, ast_right=Fa
     message.reply(Strings['NOT_APPROVED_YET'])
 
 
-def grant(message, db, reason, readonly):
+def grant(message, db, reason, perms):
     """Master function for the grant commands.
 
     Supports wildcards of pretty much any variation."""
+
+    # Handling SQL jobs case (db = server name)
+    if perms == "sqljobs":
+        grant_sql_access(message, db, reason, perms)
+        return
+
+    # Handling readonly/readwrite cases
     if ((db.endswith("*") and len(db[:-1]) < 3) or
        (db.startswith("*") and len(db[1:]) < 3) or
        (db == "*")):
@@ -325,13 +352,13 @@ def grant(message, db, reason, readonly):
         message.reply(Strings["POOP"])
     elif db.startswith("*"):
         if db.endswith("*"):
-            grant_sql_access(message, db[1:][:-1], reason, readonly, True, True)
+            grant_sql_access(message, db[1:][:-1], reason, perms, True, True)
             return
-        grant_sql_access(message, db[1:], reason, readonly, True)
+        grant_sql_access(message, db[1:], reason, perms, True)
     elif db.endswith("*"):
-        grant_sql_access(message, db[:-1], reason, readonly, False, True)
+        grant_sql_access(message, db[:-1], reason, perms, False, True)
     else:
-        grant_sql_access(message, db, reason, readonly)
+        grant_sql_access(message, db, reason, perms)
 
 
 def expire_user(name):

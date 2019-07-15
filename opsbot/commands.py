@@ -464,12 +464,18 @@ def no_reason(message, db):
 @listen_to('^grant (\S*) (.*)', re.IGNORECASE)
 def grant_access(message, db, reason):
     """Request read only access to a database."""
-    hf.grant(message, db.lower(), reason, True)
+    hf.grant(message, db.lower(), reason, "readonly")
 
 @listen_to('^grantrw (\S*) (.*)', re.IGNORECASE)
 def grant_access_rw(message, db, reason):
     """Request read/write access to a database."""
-    hf.grant(message, db.lower(), reason, False)
+    hf.grant(message, db.lower(), reason, "readwrite")
+
+
+@listen_to('^grantsql (\S*) (.*)', re.IGNORECASE)
+def grant_access_sql(message, server, reason):
+    """Request SQLjobs access in a server."""
+    hf.grant(message, db.lower(), reason, "sqljobs")
 
 
 @respond_to("^approved$")

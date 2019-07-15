@@ -37,11 +37,11 @@ def execute_sql(sql, server, database=None, get_rows=False):
         user = config.AZURE_USER + "@" + server
         password = config.AZURE_PASSWORD
         server = "tcp:{}.database.windows.net".format(config.AZURE_DB)
-    elif server == "SQLCLUSTER02":
+    elif server == "SQLCLUSTER02" or server.lower() == "sqlcluster02":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
         server = config.SQL_SERVER_2 # TODO: replace
-    elif server == "SQLCLUSTER01":
+    elif server == "SQLCLUSTER01" or server.lower() == "sqlcluster01":
         user = config.SQL_USER
         password = config.SQL_PASSWORD # TODO: replace in config
         server = config.SQL_SERVER_1 # TODO: replace
@@ -155,7 +155,7 @@ def sql_user_exists(user, server, database=None):
     return False
 
 
-def create_sql_login(user, password, database, server, expire, readonly, reason):
+def create_sql_login(user, password, database, server, expire, perms, reason):
     """Create a SQL login."""
     # create login qwerty with password='qwertyQ12345'
     # CREATE USER qwerty FROM LOGIN qwerty
@@ -229,7 +229,7 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
     # If readwrite, upgrade. Never downgrade
     rights = "readonly"
     roles = ['db_datareader']
-    if not readonly:
+    if "readwrite" in perms:
         rights = 'readwrite'
         roles = ['db_datawriter', 'db_datareader']
 
@@ -247,6 +247,25 @@ def create_sql_login(user, password, database, server, expire, readonly, reason)
                                             rights)
     logging.info(log, server, database, "createuser")
     return created_user, created_login, True
+
+
+def create_sql_jobs_access(name, server, reason):
+    """Create SQL jobs access, if user has database access already."""
+    clean_name = name.replace(".", "_")
+    if not os.path.isfile("userdata/{}_active.json".format(clean_name)):
+        return "noaccess"
+    else:
+        with open("userdata/{}_active.json".format(clean_name)) as f:
+            data = json.load(f)
+
+        if len(data["access"]) == 0:
+            return "noaccess"
+        else:
+            sql = "USE [msdb]; CREATE USER [{}] FROM LOGIN [{}]; EXEC sp_addrolemember 'SQLAgentOperatorRole', '{}';".format(name, name, name)
+            execute_sql(sql, server)
+            betterprint("SQL: " + sql)
+            logging.info("{} reason=\"{}\"".format(name, reason), server, "[NONE]", "createsqljobsaccess")
+            return "success"
 
 
 def database_list():
