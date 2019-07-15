@@ -252,6 +252,10 @@ def create_sql_login(user, password, database, server, expire, perms, reason):
 def create_sql_jobs_access(name, server, reason):
     """Create SQL jobs access, if user has database access already."""
     clean_name = name.replace(".", "_")
+
+    if not reason or reason == "":
+        return "noreason"
+
     if not os.path.isfile("userdata/{}_active.json".format(clean_name)):
         return "noaccess"
     else:

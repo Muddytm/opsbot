@@ -475,7 +475,7 @@ def grant_access_rw(message, db, reason):
 @listen_to('^grantsql (\S*) (.*)', re.IGNORECASE)
 def grant_access_sql(message, server, reason):
     """Request SQLjobs access in a server."""
-    hf.grant(message, db.lower(), reason, "sqljobs")
+    hf.grant(message, server.lower(), reason, "sqljobs")
 
 
 @respond_to("^approved$")

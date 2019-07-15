@@ -225,6 +225,8 @@ def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False
                 message.reply(Strings["SQLJOBS_NOACCESS"])
             elif result == "success":
                 message.reply(Strings["SQLJOBS_SUCCESS"].format(db.upper()))
+            elif result == "noreason":
+                message.reply(Strings["SQLJOBS_NOREASON"])
 
         return
 
