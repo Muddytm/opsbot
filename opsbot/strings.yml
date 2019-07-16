@@ -41,5 +41,5 @@ READWRITE: "<@{}>: readwrite permissions have been requested for the above datab
 REMOVE_LOGIN: "*NOTICE:* your access has been revoked, but you are still logged into one or more SQL servers. Please log out as soon as you're done, before requesting further database access."
 LOGOUT_PLEASE: ":hourglass: <@{}>: you are still logged into the SQL server *{}*. Please log out as soon as you're done."
 SQLJOBS_NOACCESS: "There is no server by this name."
-SQLJOBS_SUCCESS: "You now have access to SQL jobs in {} until your access to databases in this server runs out."
+SQLJOBS_SUCCESS: "You now have access to SQL jobs in **{}** until your access to databases in this server runs out."
 SQLJOBS_NOREASON: "Please supply a reason for requesting SQL jobs access, after the server name."

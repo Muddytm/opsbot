@@ -93,10 +93,9 @@ def execute_sql(sql, server, database=None, get_rows=False, userdata=None):
 def delete_sql_user(user, server, database):
     """Delete a SQL user."""
     betterprint("Deleting {} from server {} and db {}".format(user, server, database))
-    #if not sql_user_exists(user, server, database):
-    #    return
+
     sql = "DROP USER [{}]".format(user)
-    #print ("lets delete it now")
+
     try:
         betterprint("SQL: " + sql)
         rows, userdata = execute_sql(sql, server, database)
@@ -169,6 +168,11 @@ for filename in os.listdir("userdata/"):
             databases = json.load(data_file)
         for server in databases:
             if server in userdata["servers"]:
+                # Remove SQL jobs access, if user has it
+                sql = "USE [msdb]; DROP USER [{}]".format(name)
+                execute_sql(sql, server)
+
+                # Remove login
                 success, userdata = delete_sql_login(name, server, userdata)
                 if success:
                     logging.info("{} reason=[LOGIN REMOVED SUCCESSFULLY]\n".format(name), server, "[None]", "removelogin")
