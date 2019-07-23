@@ -231,7 +231,7 @@ def create_sql_login(user, password, database, server, expire, perms, reason):
     roles = ['db_datareader']
     if "readwrite" in perms:
         rights = 'readwrite'
-        roles = ['db_datawriter', 'db_datareader']
+        roles = ['db_datawriter', 'db_datareader', 'db_ddladmin']
 
     for role in roles:
         sql = "EXEC sp_addrolemember N'{}', N'{}'".format(role, user)
