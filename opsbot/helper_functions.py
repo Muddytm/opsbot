@@ -236,9 +236,10 @@ def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False
 
     # If requesting multiple dbs of different names (using commas), do this
     if "," in db:
+        all_db_names = db.split(",")
         for server in db_list:
-            for db_name in db.split(","):
-                if db_name in db_list:
+            for db_name in all_db_names:
+                if db_name in db_list[server]:
                     requested_dbs.append({"db": db_name, "server": server})
     else:
         # This is using ast_left (if there's an asterisk on the left of the db name)
@@ -262,7 +263,7 @@ def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False
                         requested_dbs.append({"db": db_name, "server": server})
 
     limit = 10
-    if len(requested_dbs) >= limit:
+    if len(requested_dbs) >= limit and "," not in db:
         message.reply(Strings["TOO_MANY_DBS"].format(str(len(requested_dbs)), str(limit)))
         return
 
@@ -354,6 +355,7 @@ def grant(message, db, reason, perms):
     # If multiple dbs query detected, just continue on
     if "," in db:
         grant_sql_access(message, db, reason, perms)
+        return
 
     # Handling readonly/readwrite cases
     if ((db.endswith("*") and len(db[:-1]) < 3) or
