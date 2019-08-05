@@ -234,25 +234,32 @@ def grant_sql_access(message, db, reason, perms, ast_left=False, ast_right=False
     db_list = sql.database_list()
     requested_dbs = []
 
-    # This is using ast_left (if there's an asterisk on the left of the db name)
-    # and ast_right (vice versa) to determine which dbs should be added to the
-    # list. If both are False, just look for a db of that exact name.
-    # TODO: implement this * business with glob instead.
-    for server in db_list:
-        for db_name in db_list[server]:
-            if ast_left:
-                if ast_right:
-                    if db in db_name:
+    # If requesting multiple dbs of different names (using commas), do this
+    if "," in db:
+        for server in db_list:
+            for db_name in db.split(","):
+                if db_name in db_list:
+                    requested_dbs.append({"db": db_name, "server": server})
+    else:
+        # This is using ast_left (if there's an asterisk on the left of the db name)
+        # and ast_right (vice versa) to determine which dbs should be added to the
+        # list. If both are False, just look for a db of that exact name.
+        # TODO: implement this * business with glob instead.
+        for server in db_list:
+            for db_name in db_list[server]:
+                if ast_left:
+                    if ast_right:
+                        if db in db_name:
+                            requested_dbs.append({"db": db_name, "server": server})
+                    else:
+                        if db_name.endswith(db):
+                            requested_dbs.append({"db": db_name, "server": server})
+                elif ast_right:
+                    if db_name.startswith(db):
                         requested_dbs.append({"db": db_name, "server": server})
                 else:
-                    if db_name.endswith(db):
+                    if db == db_name:
                         requested_dbs.append({"db": db_name, "server": server})
-            elif ast_right:
-                if db_name.startswith(db):
-                    requested_dbs.append({"db": db_name, "server": server})
-            else:
-                if db == db_name:
-                    requested_dbs.append({"db": db_name, "server": server})
 
     limit = 10
     if len(requested_dbs) >= limit:
@@ -343,6 +350,10 @@ def grant(message, db, reason, perms):
     if perms == "sqljobs":
         grant_sql_access(message, db, reason, perms)
         return
+
+    # If multiple dbs query detected, just continue on
+    if "," in db:
+        grant_sql_access(message, db, reason, perms)
 
     # Handling readonly/readwrite cases
     if ((db.endswith("*") and len(db[:-1]) < 3) or
